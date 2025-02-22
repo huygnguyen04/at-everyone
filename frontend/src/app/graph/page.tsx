@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Line } from "@react-three/drei";
-import { X, HelpCircle } from "lucide-react";
+import { X, HelpCircle, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 const LINE_WIDTH = 2; // Adjust this value to change line thickness
 
@@ -286,6 +288,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function NetworkGraph() {
+  const router = useRouter();
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -313,8 +316,20 @@ export default function NetworkGraph() {
         <OrbitControls makeDefault />
       </Canvas>
 
-      <ColorLegend />
-      <Sidebar point={selectedPoint} onClose={() => setSelectedPoint(null)} />
+      {/* <ColorLegend /> */}
+      <div className="flex flex-col">
+        <motion.button
+          onClick={() => router.push("/metrics")}
+          className="bg-[#4F545C] hover:bg-[#5D646D] text-white font-bold py-2 px-4 rounded-full inline-flex items-center justify-center transition-colors duration-300 absolute bottom-4 right-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <BarChart2 className="w-5 h-5 mr-2" />
+          View Metrics
+        </motion.button>
+        <Sidebar point={selectedPoint} onClose={() => setSelectedPoint(null)} />
+      </div>
       {hoveredPoint && (
         <div
           className="fixed pointer-events-none px-2 py-1 rounded bg-[#2b2d31] text-white text-sm whitespace-nowrap transform -translate-y-full"
