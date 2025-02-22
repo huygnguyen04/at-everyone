@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Line } from "@react-three/drei";
-import { X } from "lucide-react";
+import { X, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const LINE_WIDTH = 2; // Adjust this value to change line thickness
@@ -258,10 +258,38 @@ function Sidebar({
   );
 }
 
+function InfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-[#2b2d31] p-6 rounded-lg shadow-lg text-white max-w-lg w-full">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Graph Information</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-[#b5bac1] hover:text-white hover:bg-[#313338]"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
+        </div>
+        <p>
+          This graph represents the network of connections between different
+          individuals. Each point represents a person, and the lines between
+          points represent connections. The color of each point indicates the
+          value category of the individual, ranging from low to very high.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function NetworkGraph() {
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   return (
     // <div className="w-full h-screen bg-black">
@@ -298,6 +326,18 @@ export default function NetworkGraph() {
         >
           {hoveredPoint.name}
         </div>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed bottom-4 left-4 h-10 w-10 text-[#b5bac1] hover:text-white hover:bg-[#313338]"
+        onClick={() => setIsInfoModalOpen(true)}
+      >
+        <HelpCircle className="h-6 w-6" />
+        <span className="sr-only">Help</span>
+      </Button>
+      {isInfoModalOpen && (
+        <InfoModal onClose={() => setIsInfoModalOpen(false)} />
       )}
     </div>
   );
