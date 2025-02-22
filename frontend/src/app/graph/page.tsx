@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Line } from "@react-three/drei";
 import { X, HelpCircle, BarChart2 } from "lucide-react";
@@ -67,6 +67,105 @@ const networkData = [
     role: "Data Scientist",
     team: "AI",
     value: 67,
+  },
+  {
+    id: 5,
+    name: "Eve Davis",
+    position: [3, 1, -1],
+    connections: [1, 6],
+    role: "Backend Developer",
+    team: "Backend",
+    value: 78,
+  },
+  {
+    id: 6,
+    name: "Frank Miller",
+    position: [-3, -1, 2],
+    connections: [5, 7],
+    role: "DevOps Engineer",
+    team: "Infrastructure",
+    value: 55,
+  },
+  {
+    id: 7,
+    name: "Grace Lee",
+    position: [0, 3, -3],
+    connections: [6, 8],
+    role: "QA Engineer",
+    team: "Quality Assurance",
+    value: 62,
+  },
+  {
+    id: 8,
+    name: "Henry Wilson",
+    position: [-2, -3, 1],
+    connections: [7, 9],
+    role: "Business Analyst",
+    team: "Business",
+    value: 48,
+  },
+  {
+    id: 9,
+    name: "Ivy Martinez",
+    position: [2, 2, -4],
+    connections: [8, 10],
+    role: "HR Manager",
+    team: "Human Resources",
+    value: 70,
+  },
+  {
+    id: 10,
+    name: "Jack Taylor",
+    position: [-1, 1, 3],
+    connections: [9, 11],
+    role: "Marketing Specialist",
+    team: "Marketing",
+    value: 83,
+  },
+  {
+    id: 11,
+    name: "Karen Anderson",
+    position: [1, -2, 4],
+    connections: [10, 12],
+    role: "Sales Manager",
+    team: "Sales",
+    value: 58,
+  },
+  {
+    id: 12,
+    name: "Leo Thomas",
+    position: [-3, 2, -1],
+    connections: [11, 13],
+    role: "Customer Support",
+    team: "Support",
+    value: 65,
+  },
+  {
+    id: 13,
+    name: "Mia White",
+    position: [3, -3, 2],
+    connections: [12, 14],
+    role: "Finance Manager",
+    team: "Finance",
+    value: 77,
+  },
+  {
+    id: 14,
+    name: "Noah Harris",
+    position: [-2, 3, -2],
+    connections: [13, 15],
+    role: "Legal Advisor",
+    team: "Legal",
+    value: 50,
+  },
+  {
+    id: 15,
+    name: "Olivia Clark",
+    position: [2, -2, 3],
+    connections: [14, 16],
+    role: "Operations Manager",
+    team: "Operations",
+    value: 88,
   },
 ];
 
@@ -287,12 +386,38 @@ function InfoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+async function getData() {
+  const res = await fetch("https://your-api-endpoint.com/data");
+  // The fetch function is extended in Next.js to automatically cache responses.
+  // To opt out, use: fetch('...', { cache: 'no-store' })
+  if (!res.ok) {
+    // Handle error cases
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
+}
+
 export default function NetworkGraph() {
   const router = useRouter();
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [data, setData] = useState<Point[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const data = await getData();
+        setData(data);
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+      }
+    }
+    fetchData();
+  }, []);
+
+  console.log(data);
 
   return (
     // <div className="w-full h-screen bg-black">
@@ -304,7 +429,7 @@ export default function NetworkGraph() {
     >
       <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
         <color attach="background" args={["#36393F"]} />
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={3} />
         <pointLight position={[10, 10, 10]} />
         <Points
           points={networkData}
