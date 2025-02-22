@@ -1,15 +1,76 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Upload, ChevronDown, ChevronUp } from "lucide-react"
+import { motion, useAnimation } from "framer-motion"
 import { useRouter } from "next/navigation"
+
+const shapes = [
+  <path key="triangle" d="M25 0L50 25L25 50L0 25L25 0Z" fill="#7289DA" />,
+  <circle key="circle" cx="30" cy="30" r="30" fill="#43B581" />,
+  <rect key="rectangle" width="40" height="40" rx="10" fill="#FAA61A" />,
+  <path key="pentagon" d="M35 0L70 35L35 70L0 35L35 0Z" fill="#F04747" />,
+  <Upload key="upload" size={40} color="#99AAB5" />,
+]
+
+const getRandomPosition = () => ({
+  x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 1000),
+  y: Math.random() * (typeof window !== "undefined" ? window.innerHeight : 1000),
+})
+
+const FloatingShape = ({
+  children,
+  initialX,
+  initialY,
+}: {
+  children: React.ReactNode
+  initialX: number
+  initialY: number
+}) => {
+  const controls = useAnimation()
+
+  useEffect(() => {
+    const animateShape = async () => {
+      await controls.start({
+        x: [initialX - 20, initialX + 20, initialX - 20],
+        y: [initialY - 20, initialY + 20, initialY - 20],
+        rotate: [0, 360],
+        transition: {
+          duration: Math.random() * 5 + 5,
+          ease: "easeInOut",
+          times: [0, 0.5, 1],
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: "reverse",
+        },
+      })
+    }
+    animateShape()
+  }, [controls, initialX, initialY])
+
+  return (
+    <motion.div className="absolute opacity-5" style={{ x: initialX, y: initialY }} animate={controls}>
+      {children}
+    </motion.div>
+  )
+}
 
 export default function Home() {
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
   const [uploadFeedback, setUploadFeedback] = useState("")
   const router = useRouter()
+  const [shapesData, setShapesData] = useState<
+    { x: number; y: number; ShapeComponent: React.ReactNode }[]
+  >([])
+
+  useEffect(() => {
+    const generatedShapes = Array.from({ length: 20 }, (_, index) => {
+      const { x, y } = getRandomPosition()
+      const ShapeComponent = shapes[index % shapes.length]
+      return { x, y, ShapeComponent }
+    })
+    setShapesData(generatedShapes)
+  }, [])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -28,8 +89,15 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#36393F] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPgo8cmVjdCB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDVMNSAwWk02IDRMNCA2Wk0tMSAxTDEgLTFaIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')] bg-repeat"></div>
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        {shapesData.map(({ x, y, ShapeComponent }, index) => (
+          <FloatingShape key={`${x}-${y}`} initialX={x} initialY={y}>
+            <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {ShapeComponent}
+            </svg>
+          </FloatingShape>
+        ))}
       </div>
 
       <h1 className="text-5xl md:text-7xl font-bold text-center mb-12 text-white animate-fade-in-down">
@@ -82,4 +150,3 @@ export default function Home() {
     </main>
   )
 }
-
