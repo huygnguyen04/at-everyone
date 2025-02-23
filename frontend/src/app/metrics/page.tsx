@@ -9,9 +9,11 @@ import {
   MessageCircle,
   Hash,
   AtSign,
+  Home,
 } from "lucide-react";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 // Shapes and helper for random positions
 const shapes = [
@@ -413,6 +415,16 @@ export default function Metrics() {
 
   return (
     <main className="min-h-screen bg-[#36393F] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="fixed top-4 left-4 flex gap-2 z-50">
+        <Button
+          variant="ghost"
+          className="h-10 px-4 text-[#b5bac1] hover:text-white hover:bg-[#313338] inline-flex items-center"
+          onClick={() => router.push("/")}
+        >
+          <Home className="h-5 w-5 mr-2" />
+          Home
+        </Button>
+      </div>
       {/* Dynamic Background */}
       <motion.div
         key={currentType + currentIndex}
