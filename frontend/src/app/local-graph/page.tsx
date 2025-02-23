@@ -93,7 +93,8 @@ function Points({
 
           const isHighlighted =
             selectedPoint &&
-            (selectedPoint.id === point.id || selectedPoint.id === connectionId);
+            (selectedPoint.id === point.id ||
+              selectedPoint.id === connectionId);
 
           return (
             <Line
@@ -112,7 +113,10 @@ function Points({
       )}
 
       {points.map((point) => (
-        <group key={point.id} position={point.position as [number, number, number]}>
+        <group
+          key={point.id}
+          position={point.position as [number, number, number]}
+        >
           <mesh
             onClick={(e) => {
               e.stopPropagation();
@@ -131,6 +135,17 @@ function Points({
               emissiveIntensity={hoveredPoint?.id === point.id ? 0.2 : 0}
             />
           </mesh>
+          {selectedPoint?.id === point.id && (
+            <mesh>
+              <sphereGeometry args={[14, 32, 32]} />
+              <meshStandardMaterial
+                color={point.id === mainUsername ? "#FAA619" : "#6366f1"}
+                opacity={0.1}
+                transparent
+                depthWrite={false}
+              />
+            </mesh>
+          )}
         </group>
       ))}
     </group>
@@ -160,7 +175,8 @@ function Sidebar({
     {
       name: "Longest Period Without Messages",
       value:
-        point.stats["Activity Metrics"]?.longest_period_without_messages ?? "N/A",
+        point.stats["Activity Metrics"]?.longest_period_without_messages ??
+        "N/A",
     },
     {
       name: "Longest Active Conversation",
@@ -180,12 +196,14 @@ function Sidebar({
     {
       name: "Average Words per Message",
       value:
-        point.stats["Word Usage Statistics"]?.average_words_per_message ?? "N/A",
+        point.stats["Word Usage Statistics"]?.average_words_per_message ??
+        "N/A",
     },
     {
       name: "Total Emoji Used",
       value:
-        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ?? "N/A",
+        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ??
+        "N/A",
     },
     {
       name: "Most Used Emoji",
@@ -245,7 +263,8 @@ function Sidebar({
           <div className="mt-2 space-y-2">
             {metrics.map((metric) => (
               <div key={metric.name} className="p-2 rounded bg-[#313338]">
-                <span className="text-[#b5bac1]">{metric.name}:</span> {metric.value}
+                <span className="text-[#b5bac1]">{metric.name}:</span>{" "}
+                {metric.value}
               </div>
             ))}
           </div>
@@ -287,7 +306,8 @@ function InfoModal({ onClose }: { onClose: () => void }) {
         </div>
         <p>
           This is a graph showing the connection between chat users in a
-          particular chat group. Each node represents a user, and the connections between nodes represent the interactions between users.
+          particular chat group. Each node represents a user, and the
+          connections between nodes represent the interactions between users.
         </p>
       </div>
     </div>
@@ -307,7 +327,9 @@ export default function NetworkGraph() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const main_user_response = await fetch("http://127.0.0.1:5000/api/getmainuser");
+        const main_user_response = await fetch(
+          "http://127.0.0.1:5000/api/getmainuser"
+        );
         const main_username = await main_user_response.json();
 
         const response = await fetch("http://127.0.0.1:5000/api/local_graph");
@@ -318,7 +340,10 @@ export default function NetworkGraph() {
             const user = data[key];
             acc[key] = {
               ...user,
-              stats: typeof user.stats === "string" ? JSON.parse(user.stats) : user.stats,
+              stats:
+                typeof user.stats === "string"
+                  ? JSON.parse(user.stats)
+                  : user.stats,
             };
             return acc;
           },
@@ -330,19 +355,21 @@ export default function NetworkGraph() {
         const connections = generateConnections(usernames);
 
         // Transform data into points
-        const transformedPoints = Object.entries(parsedData).map(([username, userData]) => {
-          const user = userData as UserData;
-          const position = user.three_d_embedding; // No need to parse
-          return {
-            id: username,
-            name: username,
-            position,
-            connections: connections[username],
-            favoriteTopic: user.favorite_topic,
-            keywords: user.keywords,
-            stats: user.stats,
-          };
-        });
+        const transformedPoints = Object.entries(parsedData).map(
+          ([username, userData]) => {
+            const user = userData as UserData;
+            const position = user.three_d_embedding; // No need to parse
+            return {
+              id: username,
+              name: username,
+              position,
+              connections: connections[username],
+              favoriteTopic: user.favorite_topic,
+              keywords: user.keywords,
+              stats: user.stats,
+            };
+          }
+        );
 
         setUsernames(usernames);
         setPoints(transformedPoints);
@@ -433,7 +460,9 @@ export default function NetworkGraph() {
         <span className="sr-only">Help</span>
       </Button>
 
-      {isInfoModalOpen && <InfoModal onClose={() => setIsInfoModalOpen(false)} />}
+      {isInfoModalOpen && (
+        <InfoModal onClose={() => setIsInfoModalOpen(false)} />
+      )}
     </div>
   );
 }

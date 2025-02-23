@@ -115,7 +115,10 @@ function Points({
       )}
 
       {points.map((point) => (
-        <group key={point.id} position={point.position as [number, number, number]}>
+        <group
+          key={point.id}
+          position={point.position as [number, number, number]}
+        >
           <mesh
             onClick={(e) => {
               e.stopPropagation();
@@ -134,6 +137,17 @@ function Points({
               emissiveIntensity={hoveredPoint?.id === point.id ? 0.2 : 0}
             />
           </mesh>
+          {selectedPoint?.id === point.id && (
+            <mesh>
+              <sphereGeometry args={[14, 32, 32]} />
+              <meshStandardMaterial
+                color={point.id === mainUsername ? "#FAA619" : point.color}
+                opacity={0.1}
+                transparent
+                depthWrite={false}
+              />
+            </mesh>
+          )}
         </group>
       ))}
     </group>
@@ -153,18 +167,17 @@ function Sidebar({
   const metrics = [
     {
       name: "Total Messages",
-      value:
-        point.stats["Message Counts and Types"]?.total_messages ?? "N/A",
+      value: point.stats["Message Counts and Types"]?.total_messages ?? "N/A",
     },
     {
       name: "Average Messages per Day",
-      value:
-        point.stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
+      value: point.stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
     },
     {
       name: "Longest Period Without Messages",
       value:
-        point.stats["Activity Metrics"]?.longest_period_without_messages ?? "N/A",
+        point.stats["Activity Metrics"]?.longest_period_without_messages ??
+        "N/A",
     },
     {
       name: "Longest Active Conversation",
@@ -179,18 +192,19 @@ function Sidebar({
     },
     {
       name: "Unique Words Used",
-      value:
-        point.stats["Word Usage Statistics"]?.unique_words_used ?? "N/A",
+      value: point.stats["Word Usage Statistics"]?.unique_words_used ?? "N/A",
     },
     {
       name: "Average Words per Message",
       value:
-        point.stats["Word Usage Statistics"]?.average_words_per_message ?? "N/A",
+        point.stats["Word Usage Statistics"]?.average_words_per_message ??
+        "N/A",
     },
     {
       name: "Total Emoji Used",
       value:
-        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ?? "N/A",
+        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ??
+        "N/A",
     },
     {
       name: "Most Used Emoji",
@@ -250,7 +264,8 @@ function Sidebar({
           <div className="mt-2 space-y-2">
             {metrics.map((metric) => (
               <div key={metric.name} className="p-2 rounded bg-[#313338]">
-                <span className="text-[#b5bac1]">{metric.name}:</span> {metric.value}
+                <span className="text-[#b5bac1]">{metric.name}:</span>{" "}
+                {metric.value}
               </div>
             ))}
           </div>
@@ -292,7 +307,8 @@ function InfoModal({ onClose }: { onClose: () => void }) {
         </div>
         <p>
           This is a graph showing the connection between chat users in a
-          particular chat group. Each node represents a user, and the connections between nodes represent the interactions between users.
+          particular chat group. Each node represents a user, and the
+          connections between nodes represent the interactions between users.
         </p>
       </div>
     </div>
