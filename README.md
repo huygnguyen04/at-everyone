@@ -46,6 +46,41 @@
 
 3. **Start the Analytics**  
    - Enter a `.json` file in the interface to start the analytics process.
+   
+## How It Works
+
+### Frontend:
+- A user enters their username on the demo page, which is sent to the backend via the `/processUsername` endpoint.
+- The user then uploads a JSON file containing conversation data using the file upload interface (handled by the `/upload` endpoint).
+- Once the file is processed, the user can request their conversation history, local graph, or global graph via the respective GET endpoints.
+- The frontend displays the processed conversation data (including topics, keywords, and 3D embeddings) along with visual elements like color-coded graphs.
+- Users can also request generated commentary for specific conversation metrics using the commentary feature.
+
+### Backend:
+- **Username Processing:**  
+  The `/processUsername` endpoint receives the username from the frontend and sets it as the current user.
+
+- **File Upload and Processing:**  
+  The `/upload` endpoint accepts a JSON file upload, processes the conversation data by:
+  - Parsing messages and extracting unique usernames.
+  - Determining each user’s favorite topic and associated keywords.
+  - Generating embeddings and computing a 3D embedding using PCA.
+  - Updating both local (temporary) and global (persistent) conversation histories in the SQLite database.
+  - Assigning a unique conversation ID based on the current timestamp.
+
+- **Conversation History Retrieval:**  
+  The `/getconversationhistory` endpoint retrieves and returns the conversation history for the current user, including topics, keywords, stats, embeddings, and the conversation ID.
+
+- **Graph Generation:**  
+  - The `/api/local_graph` endpoint constructs a local graph view of conversation history with key details for each user.
+  - The `/api/global_graph` endpoint builds a global graph of conversation histories, mapping each conversation to a specific color based on the conversation ID.
+
+- **Main User Information:**  
+  The `/api/getmainuser` endpoint returns the current main username.
+
+- **Commentary Generation:**  
+  The `/generateCommentary` endpoint generates a commentary based on a given metric (with its name and description) by using a dedicated commentary generator function.
+
 
 ## API Endpoints
 
