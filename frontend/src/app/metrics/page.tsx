@@ -521,7 +521,7 @@ export default function Metrics() {
 
       {/* View Network Graph Button */}
       <motion.button
-        onClick={() => router.push("/local_graph")}
+        onClick={() => router.push("/local-graph")}
         className="bg-[#4F545C] hover:bg-[#5D646D] text-white font-bold py-2 px-4 rounded-full inline-flex items-center justify-center transition-colors duration-300 absolute bottom-4 right-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
