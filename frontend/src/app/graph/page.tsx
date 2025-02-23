@@ -8,19 +8,17 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
-const LINE_WIDTH = 2; // Adjust this value to change line thickness
+const LINE_WIDTH = 2;
 
-// Value to color mapping using Tailwind colors
 const valueColorMap: Record<string, string> = {
-  low: "#ef4444", // red-500
-  "medium-low": "#f97316", // orange-500
-  medium: "#eab308", // yellow-500
-  "medium-high": "#22c55e", // green-500
-  high: "#06b6d4", // cyan-500
-  "very-high": "#6366f1", // indigo-500
+  low: "#ef4444",
+  "medium-low": "#f97316",
+  medium: "#eab308",
+  "medium-high": "#22c55e",
+  high: "#06b6d4",
+  "very-high": "#6366f1",
 };
 
-// Get category based on value
 function getValueCategory(value: number): string {
   if (value < 20) return "low";
   if (value < 40) return "medium-low";
@@ -30,174 +28,87 @@ function getValueCategory(value: number): string {
   return "very-high";
 }
 
-// Sample data with value field (0-100)
-const networkData = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    position: [-2, 1, 0],
-    connections: [2, 3],
-    role: "Software Engineer",
-    team: "Frontend",
-    value: 85,
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    position: [2, -1, 1],
-    connections: [1, 4],
-    role: "Product Manager",
-    team: "Mobile",
-    value: 45,
-  },
-  {
-    id: 3,
-    name: "Carol Williams",
-    position: [-1, -2, -1],
-    connections: [1],
-    role: "Designer",
-    team: "UX",
-    value: 92,
-  },
-  {
-    id: 4,
-    name: "David Brown",
-    position: [1, 2, -2],
-    connections: [2],
-    role: "Data Scientist",
-    team: "AI",
-    value: 67,
-  },
-  {
-    id: 5,
-    name: "Eve Davis",
-    position: [3, 1, -1],
-    connections: [1, 6],
-    role: "Backend Developer",
-    team: "Backend",
-    value: 78,
-  },
-  {
-    id: 6,
-    name: "Frank Miller",
-    position: [-3, -1, 2],
-    connections: [5, 7],
-    role: "DevOps Engineer",
-    team: "Infrastructure",
-    value: 55,
-  },
-  {
-    id: 7,
-    name: "Grace Lee",
-    position: [0, 3, -3],
-    connections: [6, 8],
-    role: "QA Engineer",
-    team: "Quality Assurance",
-    value: 62,
-  },
-  {
-    id: 8,
-    name: "Henry Wilson",
-    position: [-2, -3, 1],
-    connections: [7, 9],
-    role: "Business Analyst",
-    team: "Business",
-    value: 48,
-  },
-  {
-    id: 9,
-    name: "Ivy Martinez",
-    position: [2, 2, -4],
-    connections: [8, 10],
-    role: "HR Manager",
-    team: "Human Resources",
-    value: 70,
-  },
-  {
-    id: 10,
-    name: "Jack Taylor",
-    position: [-1, 1, 3],
-    connections: [9, 11],
-    role: "Marketing Specialist",
-    team: "Marketing",
-    value: 83,
-  },
-  {
-    id: 11,
-    name: "Karen Anderson",
-    position: [1, -2, 4],
-    connections: [10, 12],
-    role: "Sales Manager",
-    team: "Sales",
-    value: 58,
-  },
-  {
-    id: 12,
-    name: "Leo Thomas",
-    position: [-3, 2, -1],
-    connections: [11, 13],
-    role: "Customer Support",
-    team: "Support",
-    value: 65,
-  },
-  {
-    id: 13,
-    name: "Mia White",
-    position: [3, -3, 2],
-    connections: [12, 14],
-    role: "Finance Manager",
-    team: "Finance",
-    value: 77,
-  },
-  {
-    id: 14,
-    name: "Noah Harris",
-    position: [-2, 3, -2],
-    connections: [13, 15],
-    role: "Legal Advisor",
-    team: "Legal",
-    value: 50,
-  },
-  {
-    id: 15,
-    name: "Olivia Clark",
-    position: [2, -2, 3],
-    connections: [14, 16],
-    role: "Operations Manager",
-    team: "Operations",
-    value: 88,
-  },
-];
+// Generate random connections between users
+// function generateConnections(users: string[]): Record<string, string[]> {
+//   const connections: Record<string, string[]> = {};
 
-interface Point {
-  id: number;
-  name: string;
-  position: number[];
-  connections: number[];
-  role: string;
-  team: string;
-  value: number;
+//   users.forEach((user) => {
+//     const numConnections = Math.floor(Math.random() * 3) + 1; // 1-3 connections per user
+//     const otherUsers = users.filter((u) => u !== user);
+//     const userConnections = [];
+
+//     for (let i = 0; i < numConnections; i++) {
+//       if (otherUsers.length > 0) {
+//         const randomIndex = Math.floor(Math.random() * otherUsers.length);
+//         userConnections.push(otherUsers[randomIndex]);
+//         otherUsers.splice(randomIndex, 1);
+//       }
+//     }
+
+//     connections[user] = userConnections;
+//   });
+
+//   console.log("Connections: ", connections);
+//   return connections;
+// }
+function generateConnections(users: string[]): Record<string, string[]> {
+  const connections: Record<string, string[]> = {};
+
+  users.forEach((user) => {
+    const numConnections = Math.floor(Math.random() * 3) + 1; // 1-3 connections per user
+    const otherUsers = users.filter((u) => u !== user);
+    const userConnections: string[] = [];
+
+    for (let i = 0; i < numConnections; i++) {
+      if (otherUsers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * otherUsers.length);
+        userConnections.push(otherUsers[randomIndex]);
+        otherUsers.splice(randomIndex, 1);
+      }
+    }
+
+    connections[user] = userConnections;
+  });
+
+  // Ensure bidirectional connections
+  Object.entries(connections).forEach(([user, userConnections]) => {
+    userConnections.forEach((otherUser) => {
+      if (!connections[otherUser]) {
+        connections[otherUser] = [];
+      }
+      if (!connections[otherUser].includes(user)) {
+        connections[otherUser].push(user);
+      }
+    });
+  });
+
+  console.log("Connections: ", connections);
+  return connections;
 }
 
-function ColorLegend() {
-  return (
-    <div className="absolute bottom-4 right-4 bg-[#2b2d31] p-4 rounded-lg shadow-lg">
-      <div className="text-white mb-2 font-medium">Value Categories</div>
-      <div className="grid gap-2">
-        {Object.entries(valueColorMap).map(([category, color]) => (
-          <div key={category} className="flex items-center gap-2">
-            <div
-              className="w-4 h-4 rounded"
-              style={{ backgroundColor: color }}
-            />
-            <span className="text-white text-sm capitalize">
-              {category.replace("-", " ")}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface UserData {
+  favorite_topic: string;
+  keywords: Array<{ keyword: string; score: number }>;
+  stats: {
+    "Message Counts and Types": {
+      total_messages: number;
+      [key: string]: number;
+    };
+    "Dryness Score": number;
+    "Humor Score": number;
+    [key: string]: any;
+  };
+  three_d_embedding: number[];
+}
+
+interface Point {
+  id: string;
+  name: string;
+  position: number[];
+  connections: string[];
+  favoriteTopic: string;
+  keywords: Array<{ keyword: string; score: number }>;
+  stats: any;
 }
 
 function Points({
@@ -215,7 +126,6 @@ function Points({
 }) {
   return (
     <group>
-      {/* Draw lines between connected points */}
       {points.map((point) =>
         point.connections.map((connectionId) => {
           const connectedPoint = points.find((p) => p.id === connectionId);
@@ -242,7 +152,6 @@ function Points({
         })
       )}
 
-      {/* Draw points */}
       {points.map((point) => (
         <group
           key={point.id}
@@ -301,57 +210,55 @@ function Sidebar({
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{
-              backgroundColor: valueColorMap[getValueCategory(point.value)],
-            }}
-          />
-          <span className="text-sm text-[#b5bac1] capitalize">
-            {getValueCategory(point.value).replace("-", " ")}
-          </span>
+        <div>
+          <h3 className="text-sm font-medium text-[#b5bac1]">Favorite Topic</h3>
+          <p className="mt-1">{point.favoriteTopic}</p>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-[#b5bac1]">Role</h3>
-            <p className="mt-1">{point.role}</p>
+        <div>
+          <h3 className="text-sm font-medium text-[#b5bac1]">Top Keywords</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {/* {point.keywords.slice(0, 5).map((kw) => ( */}
+            {point.keywords.map((kw) => (
+              <span
+                key={kw.keyword}
+                className="px-2 py-1 rounded bg-[#313338] text-sm"
+              >
+                {kw.keyword}
+              </span>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <h3 className="text-sm font-medium text-[#b5bac1]">Team</h3>
-            <p className="mt-1">{point.team}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-[#b5bac1]">Value</h3>
-            <p className="mt-1">{point.value}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-[#b5bac1]">Connections</h3>
-            <div className="mt-2 space-y-2">
-              {point.connections.map((id) => {
-                const connection = networkData.find((p) => p.id === id);
-                if (!connection) return null;
-                return (
-                  <div
-                    key={id}
-                    className="flex items-center gap-2 p-2 rounded bg-[#313338]"
-                  >
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{
-                        backgroundColor:
-                          valueColorMap[getValueCategory(connection.value)],
-                      }}
-                    />
-                    <span>{connection.name}</span>
-                  </div>
-                );
-              })}
+        <div>
+          <h3 className="text-sm font-medium text-[#b5bac1]">Stats</h3>
+          <div className="mt-2 space-y-2">
+            <div className="p-2 rounded bg-[#313338]">
+              <span className="text-[#b5bac1]">Total Messages:</span>{" "}
+              {point.stats["Message Counts and Types"]["total_messages"]}
             </div>
+            <div className="p-2 rounded bg-[#313338]">
+              <span className="text-[#b5bac1]">Dryness Score:</span>{" "}
+              {point.stats["Dryness Score"]}
+            </div>
+            <div className="p-2 rounded bg-[#313338]">
+              <span className="text-[#b5bac1]">Humor Score:</span>{" "}
+              {point.stats["Humor Score"]}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-[#b5bac1]">Connections</h3>
+          <div className="mt-2 space-y-2">
+            {point.connections.map((id) => (
+              <div
+                key={id}
+                className="flex items-center gap-2 p-2 rounded bg-[#313338]"
+              >
+                <span>{id}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -376,25 +283,14 @@ function InfoModal({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         <p>
-          This graph represents the network of connections between different
-          individuals. Each point represents a person, and the lines between
-          points represent connections. The color of each point indicates the
-          value category of the individual, ranging from low to very high.
+          This graph represents the network of users and their connections. Each
+          point represents a user, with colors indicating their activity level.
+          The lines between points show connections between users. Click on any
+          point to see detailed information about that user.
         </p>
       </div>
     </div>
   );
-}
-
-async function getData() {
-  const res = await fetch("https://your-api-endpoint.com/data");
-  // The fetch function is extended in Next.js to automatically cache responses.
-  // To opt out, use: fetch('...', { cache: 'no-store' })
-  if (!res.ok) {
-    // Handle error cases
-    throw new Error("Failed to fetch data");
-  }
-  return res.json();
 }
 
 export default function NetworkGraph() {
@@ -403,26 +299,63 @@ export default function NetworkGraph() {
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [data, setData] = useState<Point[]>([]);
+  const [points, setPoints] = useState<Point[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await getData();
-        setData(data);
+        const response = await fetch("http://127.0.0.1:5000/api/local_graph");
+        const data = await response.json();
+
+        const parsedData = Object.keys(data).reduce(
+          (acc: Record<string, UserData>, key) => {
+            const user = data[key];
+            acc[key] = {
+              ...user,
+              stats:
+                typeof user.stats === "string"
+                  ? JSON.parse(user.stats)
+                  : user.stats,
+            };
+            return acc;
+          },
+          {}
+        );
+
+        // Generate random connections between users
+        const usernames = Object.keys(parsedData);
+        const connections = generateConnections(usernames);
+
+        // Transform data into points
+        const transformedPoints = Object.entries(parsedData).map(
+          ([username, userData]) => {
+            const user = userData as UserData;
+            const position = user.three_d_embedding; // No need to parse
+            // No need to parse keywords and stats anymore
+            return {
+              id: username,
+              name: username,
+              position,
+              connections: connections[username],
+              favoriteTopic: user.favorite_topic,
+              keywords: user.keywords,
+              stats: user.stats,
+            };
+          }
+        );
+
+        setPoints(transformedPoints);
       } catch (error) {
-        console.error("Failed to fetch data", error);
+        console.error("Failed to fetch data:", error);
       }
     }
+
     fetchData();
   }, []);
 
-  console.log(data);
-
   return (
-    // <div className="w-full h-screen bg-black">
     <div
-      className="w-full h-screen #36393F"
+      className="w-full h-screen bg-[#36393F]"
       onPointerMove={(e) => {
         setMousePosition({ x: e.clientX, y: e.clientY });
       }}
@@ -445,12 +378,13 @@ export default function NetworkGraph() {
           Global Graph
         </Button>
       </div>
+
       <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
         <color attach="background" args={["#36393F"]} />
         <ambientLight intensity={3} />
         <pointLight position={[10, 10, 10]} />
         <Points
-          points={networkData}
+          points={points}
           onPointClick={setSelectedPoint}
           hoveredPoint={hoveredPoint}
           setHoveredPoint={setHoveredPoint}
@@ -459,7 +393,6 @@ export default function NetworkGraph() {
         <OrbitControls makeDefault />
       </Canvas>
 
-      {/* <ColorLegend /> */}
       <div className="flex flex-col">
         <motion.button
           onClick={() => router.push("/metrics")}
@@ -473,6 +406,7 @@ export default function NetworkGraph() {
         </motion.button>
         <Sidebar point={selectedPoint} onClose={() => setSelectedPoint(null)} />
       </div>
+
       {hoveredPoint && (
         <div
           className="fixed pointer-events-none px-2 py-1 rounded bg-[#2b2d31] text-white text-sm whitespace-nowrap transform -translate-y-full"
@@ -485,6 +419,7 @@ export default function NetworkGraph() {
           {hoveredPoint.name}
         </div>
       )}
+
       <Button
         variant="ghost"
         size="icon"
@@ -494,6 +429,7 @@ export default function NetworkGraph() {
         <HelpCircle className="h-6 w-6" />
         <span className="sr-only">Help</span>
       </Button>
+
       {isInfoModalOpen && (
         <InfoModal onClose={() => setIsInfoModalOpen(false)} />
       )}
