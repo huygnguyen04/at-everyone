@@ -49,6 +49,15 @@ db.connect()
 db.create_tables([ConversationHistory, GlobalConversationHistory], safe=True)
 db.close()
 
+username = ""
+@app.route('/processUsername', methods=['POST'])
+def process_username():
+    global username
+    data = request.get_json()
+    username = data.get("username")
+
+    return jsonify({"message": "Username processed", "username": username}), 200
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     file = request.files.get('file')
@@ -57,7 +66,7 @@ def upload_file():
 
     try:
         data = json.load(file)
-        print("Received JSON:", data)
+        print("Received JSON")
     except Exception as e:
         print("Error processing file:", e)
         return jsonify({"error": "Invalid JSON file"}), 400
@@ -143,23 +152,6 @@ def upload_file():
 
     db.close()
     return jsonify({"message": "File received and processed."}), 200
-
-@app.route('/getConversationHistory', methods=['GET'])
-def get_conversation_history():
-    db.connect()
-    records = ConversationHistory.select()
-    results = []
-    for rec in records:
-        results.append({
-            "username": rec.username,
-            "favorite_topic": rec.favorite_topic,
-            "keywords": rec.keywords,   # still a JSON string
-            "stats": rec.stats,         # still a JSON string
-            "embedding": rec.embedding,
-            "three_d_embedding": rec.three_d_embedding,
-        })
-    db.close()
-    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True)
