@@ -11,6 +11,7 @@ from peewee import Model, TextField, SqliteDatabase
 from flask_cors import CORS
 import orm
 import ast
+from generateCommentary import create_wrapped_commentary
 from datetime import datetime  # Import datetime to generate conversation ID
 
 def safe_eval_dict(data):
@@ -99,7 +100,6 @@ def upload_file():
     conversation_id = datetime.now().isoformat()
 
     usernames = get_unique_usernames(data)
-
     for username in usernames:
         # Compute values for each user
         topic = find_favorite_topic(username, data)
@@ -239,6 +239,34 @@ def get_local_graph():
             data[user]["keywords"] = keyword
             
     return jsonify(data)
+
+@app.route("/generateCommentary", methods=["POST"])
+def generate_commentary():
+    data = request.get_json()
+    metric_value = data.get("metric")
+    metric_name = data.get("name")
+    if metric_value is None or metric_name is None:
+        return jsonify({"error": "Invalid input"}), 400
+    
+    print(data)
+
+    # Generate commentary using the metric value (converted to string)
+    commentary = create_wrapped_commentary(metric_name + str(metric_value) + data.get("description"))
+    
+    # Mapping from metric names to a brief description.
+    description_mapping = {
+         "Total Emoji Used": "The total number of emojis used across all messages.",
+         "Messages with at Least One Emoji": "Count of messages that include at least one emoji.",
+         "Total Emoji Used in Reactions": "Total count of emojis used in reaction responses.",
+         "Unique Emoji Used in Reactions": "Number of distinct emojis used in reactions.",
+         "Messages with at Least One Emoji Reacted": "Count of messages that received an emoji reaction.",
+         "Most Used Emoji": "The emoji that appears most frequently in conversations.",
+         "Dryness Score": "A score representing how dry or unengaging the conversation is.",
+         "Humor Score": "A score indicating the level of humor in the conversation.",
+    }
+    description = description_mapping.get(metric_name, "No description available.")
+    return jsonify({"commentary": commentary, "description": description})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
