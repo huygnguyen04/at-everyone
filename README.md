@@ -1,6 +1,6 @@
 # @everyone
 
-**@everyone** is a Discord analytics tool that transforms raw JSON data from your Discord messages into a wide range of insights. By parsing your conversation history, it generates custom and engaging metrics—like identifying your favorite discussion topics using a novel ML pipeline. These metrics are then used to build a high-dimensional embedding for each user, which is projected into a 3D semantic space. This interactive visualization lets you see your closest connections based on conversational similarity. Additionally, you’ll get personalized commentary that explains your unique metrics, giving you a deeper understanding of your Discord activity.
+**@everyone** is a Discord analytics tool that transforms raw JSON data from your Discord messages into a wide range of insights. By parsing your conversation history, it generates custom and engaging metrics personalized to you. These metrics are then used to build a high-dimensional embedding for each user, which is projected into a 3D semantic space. This interactive visualization lets you see your closest connections based on conversational similarity. Additionally, you’ll get personalized commentary that explains your unique metrics, giving you a deeper understanding of your Discord activity.
 
 ## Setup
 
