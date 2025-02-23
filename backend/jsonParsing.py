@@ -38,19 +38,25 @@ def parse_timedelta(time_str):
     Returns a timedelta object.
     """
     time_str = str(time_str)
+    print(time_str)
+
     days = 0
     # Check if the time string contains a day component.
-    if "days" in time_str:
+    if "day" in time_str:
         days_part, time_part = time_str.split(", ")
         days = int(days_part.split()[0])
     else:
         time_part = time_str
+
     # Split the time part by ":".
     parts = time_part.split(":")
+    print(parts)
+
     if len(parts) == 2:
         # Format is HH:MM, assume 0 seconds.
         hours, minutes = map(int, parts)
         seconds = 0
+
     elif len(parts) == 3:
         # Format is HH:MM:SS.
         hours, minutes, seconds = map(float, parts)

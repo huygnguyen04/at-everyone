@@ -108,7 +108,7 @@ def upload_file():
     # Generate a unique conversation ID for this file upload
     conversation_id = datetime.now().isoformat()
 
-    usernames = get_unique_usernames(data)[0:10]
+    usernames = get_unique_usernames(data)
 
     for username in usernames:
         # Compute values for each user

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 
 const LINE_WIDTH = 2;
+const RADIUS = 4;
 
 // Function to generate connections between points based on distance threshold
 function generateConnections(points: Point[]): Record<string, string[]> {
@@ -32,7 +33,7 @@ function generateConnections(points: Point[]): Record<string, string[]> {
             Math.pow(point.position[1] - otherPoint.position[1], 2) +
             Math.pow(point.position[2] - otherPoint.position[2], 2)
         );
-        if (distance <= 14) {
+        if (distance <= RADIUS) {
           connections[point.id].push(otherPoint.id);
         }
       }
@@ -139,7 +140,7 @@ function Points({
           </mesh>
           {selectedPoint?.id === point.id && (
             <mesh>
-              <sphereGeometry args={[14, 32, 32]} />
+              <sphereGeometry args={[RADIUS, 32, 32]} />
               <meshStandardMaterial
                 color={point.id === mainUsername ? "#FAA619" : point.color}
                 opacity={0.1}
