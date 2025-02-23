@@ -77,7 +77,7 @@ def upload_file():
     # Clear the conversationhistory table on each new upload
     ConversationHistory.delete().execute()
 
-    usernames = get_unique_usernames(data)
+    usernames = get_unique_usernames(data)[0:3]
 
     for username in usernames:
         # Compute values for each user
@@ -152,6 +152,30 @@ def upload_file():
 
     db.close()
     return jsonify({"message": "File received and processed."}), 200
+
+@app.route('/getconversationhistory', methods=['GET'])
+def get_conversation_history():
+    global username
+    if not username:
+        return jsonify({"error": "Username not set"}), 400
+
+    db.connect()
+    try:
+        record = GlobalConversationHistory.get(GlobalConversationHistory.username == username)
+    except GlobalConversationHistory.DoesNotExist:
+        db.close()
+        return jsonify({"error": "No conversation history found for username"}), 404
+
+    response = {
+        "username": record.username,
+        "favorite_topic": record.favorite_topic,
+        "keywords": json.loads(record.keywords),
+        "stats": json.loads(record.stats),
+        "embedding": json.loads(record.embedding),
+        "three_d_embedding": json.loads(record.three_d_embedding) if record.three_d_embedding else None,
+    }
+    db.close()
+    return jsonify(response), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
