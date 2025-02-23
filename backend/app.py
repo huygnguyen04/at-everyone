@@ -32,20 +32,20 @@ def safe_eval_dict(data):
 app = Flask(__name__)
 CORS(app)
 
-# Connect to the database
+# connect to db
 db = SqliteDatabase("conversationhistory.db")
 
 
-# Base model for Peewee models
+# base model for Peewee models
 class BaseModel(Model):
     class Meta:
         database = db
 
 
-# Local conversation history: cleared on every file upload
+# local conversation history: cleared on every file upload
 class ConversationHistory(BaseModel):
     username = TextField(primary_key=True)
-    favorite_topic = TextField()  # e.g., the topic label
+    favorite_topic = TextField()  
     keywords = TextField()  # stored as a JSON string
     stats = TextField()  # stored as a JSON string of all stats
     embedding = TextField()  # stored as a JSON string of the embedding
@@ -55,7 +55,7 @@ class ConversationHistory(BaseModel):
         table_name = "conversationhistory"
 
 
-# Global conversation history: accumulates or updates records over time
+# global conversation history to accumulates or updates records over time
 class GlobalConversationHistory(BaseModel):
     username = TextField(primary_key=True)
     favorite_topic = TextField()
@@ -65,13 +65,13 @@ class GlobalConversationHistory(BaseModel):
     three_d_embedding = TextField(null=True, default="")
     last_conversation = TextField(
         null=True, default=""
-    )  # NEW COLUMN to track conversation source
+    ) 
 
     class Meta:
         table_name = "globalconversationhistory"
 
 
-# Ensure tables exist
+# just making sure table exist
 db.connect()
 db.create_tables([ConversationHistory, GlobalConversationHistory], safe=True)
 db.close()
@@ -100,7 +100,6 @@ def upload_file():
         print("Error processing file:", e)
         return jsonify({"error": "Invalid JSON file"}), 400
 
-    # Open a new connection
     db.connect()
 
     # Clear the conversationhistory table on each new upload
@@ -264,22 +263,6 @@ def get_local_graph():
 
 @app.route("/api/global_graph", methods=["GET"])
 def get_global_graph():
-    # colors = [
-    #     "#f43f5e",
-    #     "#ec4899",
-    #     "#d946ef",
-    #     "#a855f7",
-    #     "#8b5cf6",
-    #     "#6366f1",
-    #     "#3b82f6",
-    #     "#0ea5e9",
-    #     "#06b6d4",
-    #     "#14b8a6",
-    #     "#10b981",
-    #     "#22c55e",
-    #     "#84cc16",
-    #     "#ef4444",
-    # ]
     colors = [
         "#10b981",
         "#a855f7",

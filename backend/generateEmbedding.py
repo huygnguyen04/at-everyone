@@ -1,8 +1,6 @@
 import numpy as np
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-# Import the functions and objects from your two files.
-# Adjust the module names below as needed.
 from topicModeling import find_favorite_topic, embedder
 from jsonParsing import parse_messages
 from sklearn.preprocessing import StandardScaler
@@ -34,7 +32,6 @@ def parse_timedelta(time_str):
 
 def getEmbedding(favorite_label, stats):
 
-    # === 1. Favorite Topic Embedding ===
     topic_embedding = embedder.encode([favorite_label])
     
     # 1. Total number of messages.

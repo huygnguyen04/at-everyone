@@ -19,6 +19,7 @@ import {
 
 const LINE_WIDTH = 2;
 
+// Function to generate connections between points based on distance threshold
 function generateConnections(points: Point[]): Record<string, string[]> {
   const connections: Record<string, string[]> = {};
 
@@ -41,6 +42,7 @@ function generateConnections(points: Point[]): Record<string, string[]> {
   return connections;
 }
 
+// Define interfaces for user data and graph points
 interface UserData {
   favorite_topic: string;
   keywords: Array<{ keyword: string; score: number }>;
@@ -66,6 +68,7 @@ interface Point {
   stats: any;
 }
 
+// Component for rendering points and connections on the graph
 function Points({
   points,
   onPointClick,
@@ -339,6 +342,7 @@ export function UsernameSelect({ usernames, onSelect }: UsernameSelectProps) {
   );
 }
 
+// Main network graph component
 export default function NetworkGraph() {
   const router = useRouter();
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
