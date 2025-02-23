@@ -8,41 +8,17 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
+// Global line width and threshold for connections.
 const LINE_WIDTH = 2;
+const GLOBAL_THRESHOLD = 14.0;
 
-function generateConnections(users: string[]): Record<string, string[]> {
-  const connections: Record<string, string[]> = {};
-
-  users.forEach((user) => {
-    const numConnections = Math.floor(Math.random() * 3) + 1;
-    const otherUsers = users.filter((u) => u !== user);
-    const userConnections: string[] = [];
-
-    for (let i = 0; i < numConnections; i++) {
-      if (otherUsers.length > 0) {
-        const randomIndex = Math.floor(Math.random() * otherUsers.length);
-        userConnections.push(otherUsers[randomIndex]);
-        otherUsers.splice(randomIndex, 1);
-      }
-    }
-
-    connections[user] = userConnections;
-  });
-
-  Object.entries(connections).forEach(([user, userConnections]) => {
-    userConnections.forEach((otherUser) => {
-      if (!connections[otherUser]) {
-        connections[otherUser] = [];
-      }
-      if (!connections[otherUser].includes(user)) {
-        connections[otherUser].push(user);
-      }
-    });
-  });
-
-  console.log("Connections: ", connections);
-  return connections;
-}
+// Helper function to compute Euclidean distance in 3D.
+const calcDistance = (pos1: number[], pos2: number[]) => {
+  const dx = pos1[0] - pos2[0];
+  const dy = pos1[1] - pos2[1];
+  const dz = pos1[2] - pos2[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+};
 
 interface UserData {
   favorite_topic: string;
@@ -62,13 +38,22 @@ interface UserData {
 interface Point {
   id: string;
   name: string;
-  position: number[];
-  connections: string[];
+  position: number[]; // [x, y, z]
   favoriteTopic: string;
   keywords: Array<{ keyword: string; score: number }>;
   stats: any;
+  // For local graph we no longer rely on precomputed connections.
+  color: string;
 }
 
+/**
+ * Points component:
+ * - Always draws global (dim) connections: for every unique pair of points,
+ *   if their distance is below GLOBAL_THRESHOLD, draw a white line at 50% opacity.
+ * - If a point is selected, additionally draw full-opacity white lines from that point
+ *   to every other point within the threshold.
+ * - All points are rendered as spheres. If a point is selected, a translucent highlight sphere is drawn.
+ */
 function Points({
   points,
   onPointClick,
@@ -86,37 +71,55 @@ function Points({
 }) {
   return (
     <group>
-      {points.map((point) =>
-        point.connections.map((connectionId) => {
-          const connectedPoint = points.find((p) => p.id === connectionId);
-          if (!connectedPoint) return null;
-
-          const isHighlighted =
-            selectedPoint &&
-            (selectedPoint.id === point.id ||
-              selectedPoint.id === connectionId);
-
-          return (
-            <Line
-              key={`${point.id}-${connectionId}`}
-              points={[
-                point.position as [number, number, number],
-                connectedPoint.position as [number, number, number],
-              ]}
-              color={isHighlighted ? "#ffffff" : "#4f545c"}
-              lineWidth={LINE_WIDTH}
-              opacity={isHighlighted ? 1 : 0.5}
-              transparent
-            />
-          );
+      {/* Global (dim) connections for every unique pair */}
+      {points.map((point, i) =>
+        points.slice(i + 1).map((otherPoint) => {
+          const distance = calcDistance(point.position, otherPoint.position);
+          if (distance < GLOBAL_THRESHOLD) {
+            return (
+              <Line
+                key={`pair-${point.id}-${otherPoint.id}`}
+                points={[
+                  point.position as [number, number, number],
+                  otherPoint.position as [number, number, number],
+                ]}
+                color="#4f545c"
+                lineWidth={LINE_WIDTH}
+                opacity={0.5}
+                transparent
+              />
+            );
+          }
+          return null;
         })
       )}
 
+      {/* Highlight connections from the selected point */}
+      {selectedPoint &&
+        points.map((point) => {
+          if (point.id === selectedPoint.id) return null;
+          const distance = calcDistance(selectedPoint.position, point.position);
+          if (distance < GLOBAL_THRESHOLD) {
+            return (
+              <Line
+                key={`sel-${selectedPoint.id}-${point.id}`}
+                points={[
+                  selectedPoint.position as [number, number, number],
+                  point.position as [number, number, number],
+                ]}
+                color="#ffffff"
+                lineWidth={LINE_WIDTH}
+                opacity={1}
+                transparent
+              />
+            );
+          }
+          return null;
+        })}
+
+      {/* Render all spheres */}
       {points.map((point) => (
-        <group
-          key={point.id}
-          position={point.position as [number, number, number]}
-        >
+        <group key={point.id} position={point.position as [number, number, number]}>
           <mesh
             onClick={(e) => {
               e.stopPropagation();
@@ -136,10 +139,11 @@ function Points({
             />
           </mesh>
           {selectedPoint?.id === point.id && (
+            // Highlight sphere around the selected point.
             <mesh>
-              <sphereGeometry args={[14, 32, 32]} />
+              <sphereGeometry args={[GLOBAL_THRESHOLD, 32, 32]} />
               <meshStandardMaterial
-                color={point.id === mainUsername ? "#FAA619" : "#6366f1"}
+                color="#ffffff"
                 opacity={0.1}
                 transparent
                 depthWrite={false}
@@ -152,17 +156,27 @@ function Points({
   );
 }
 
+/**
+ * Sidebar component displays details for the selected point.
+ * It also computes the connections (i.e. nearby points) for that point using GLOBAL_THRESHOLD.
+ */
 function Sidebar({
   point,
+  allPoints,
   onClose,
 }: {
   point: Point | null;
+  allPoints: Point[];
   onClose: () => void;
 }) {
   if (!point) return null;
-  console.log(point.stats);
 
-  // Define the metrics in the specified order.
+  // Compute connections: all points (excluding self) within GLOBAL_THRESHOLD.
+  const connectedPoints = allPoints.filter(
+    (p) => p.id !== point.id && calcDistance(point.position, p.position) < GLOBAL_THRESHOLD
+  );
+
+  // Define the metrics in a specified order.
   const metrics = [
     {
       name: "Total Messages",
@@ -174,14 +188,11 @@ function Sidebar({
     },
     {
       name: "Longest Period Without Messages",
-      value:
-        point.stats["Activity Metrics"]?.longest_period_without_messages ??
-        "N/A",
+      value: point.stats["Activity Metrics"]?.longest_period_without_messages ?? "N/A",
     },
     {
       name: "Longest Active Conversation",
-      value:
-        point.stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
+      value: point.stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
     },
     {
       name: "Most Active Year",
@@ -195,15 +206,11 @@ function Sidebar({
     },
     {
       name: "Average Words per Message",
-      value:
-        point.stats["Word Usage Statistics"]?.average_words_per_message ??
-        "N/A",
+      value: point.stats["Word Usage Statistics"]?.average_words_per_message ?? "N/A",
     },
     {
       name: "Total Emoji Used",
-      value:
-        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ??
-        "N/A",
+      value: point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ?? "N/A",
     },
     {
       name: "Most Used Emoji",
@@ -248,10 +255,7 @@ function Sidebar({
           <h3 className="text-sm font-medium text-[#b5bac1]">Top Keywords</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {point.keywords.map((kw) => (
-              <span
-                key={kw.keyword}
-                className="px-2 py-1 rounded bg-[#313338] text-sm"
-              >
+              <span key={kw.keyword} className="px-2 py-1 rounded bg-[#313338] text-sm">
                 {kw.keyword}
               </span>
             ))}
@@ -263,8 +267,7 @@ function Sidebar({
           <div className="mt-2 space-y-2">
             {metrics.map((metric) => (
               <div key={metric.name} className="p-2 rounded bg-[#313338]">
-                <span className="text-[#b5bac1]">{metric.name}:</span>{" "}
-                {metric.value}
+                <span className="text-[#b5bac1]">{metric.name}:</span> {metric.value}
               </div>
             ))}
           </div>
@@ -273,14 +276,15 @@ function Sidebar({
         <div>
           <h3 className="text-sm font-medium text-[#b5bac1]">Connections</h3>
           <div className="mt-2 space-y-2">
-            {point.connections.map((id) => (
-              <div
-                key={id}
-                className="flex items-center gap-2 p-2 rounded bg-[#313338]"
-              >
-                <span>{id}</span>
-              </div>
-            ))}
+            {connectedPoints.length > 0 ? (
+              connectedPoints.map((p) => (
+                <div key={p.id} className="flex items-center gap-2 p-2 rounded bg-[#313338]">
+                  <span>{p.name}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-[#b5bac1]">No nearby connections</p>
+            )}
           </div>
         </div>
       </div>
@@ -305,9 +309,10 @@ function InfoModal({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         <p>
-          This is a graph showing the connection between chat users in a
-          particular chat group. Each node represents a user, and the
-          connections between nodes represent the interactions between users.
+          This is a graph showing the connection between chat users in a particular chat group.
+          Each node represents a user. Global connections (for every unique pair within the threshold)
+          are drawn in white at lower opacity. When you click on a node, additional connections from that node
+          are drawn at full opacity, and the Sidebar displays the names of the connected users.
         </p>
       </div>
     </div>
@@ -322,58 +327,48 @@ export default function NetworkGraph() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [points, setPoints] = useState<Point[]>([]);
   const [mainUsername, setMainUsername] = useState<string | null>(null);
-  const [usernames, setUsernames] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const main_user_response = await fetch(
-          "http://127.0.0.1:5000/api/getmainuser"
-        );
+        const main_user_response = await fetch("http://127.0.0.1:5000/api/getmainuser");
         const main_username = await main_user_response.json();
 
         const response = await fetch("http://127.0.0.1:5000/api/local_graph");
         const data = await response.json();
 
-        const parsedData = Object.keys(data).reduce(
-          (acc: Record<string, UserData>, key) => {
-            const user = data[key];
-            acc[key] = {
-              ...user,
-              stats:
-                typeof user.stats === "string"
-                  ? JSON.parse(user.stats)
-                  : user.stats,
-            };
-            return acc;
-          },
-          {}
-        );
+        const parsedData = Object.keys(data).reduce((acc: Record<string, UserData>, key) => {
+          const user = data[key];
+          acc[key] = {
+            ...user,
+            stats: typeof user.stats === "string" ? JSON.parse(user.stats) : user.stats,
+          };
+          return acc;
+        }, {});
 
-        // Generate random connections between users
-        const usernames = Object.keys(parsedData);
-        const connections = generateConnections(usernames);
-
-        // Transform data into points
-        const transformedPoints = Object.entries(parsedData).map(
-          ([username, userData]) => {
+        // Transform data into points; we ignore any precomputed connections.
+        const transformedPoints = Object.entries(parsedData)
+          .filter(([username, userData]) => {
             const user = userData as UserData;
-            const position = user.three_d_embedding; // No need to parse
+            const position = user.three_d_embedding;
+            return Array.isArray(position) && position.every((coord) => !isNaN(coord));
+          })
+          .map(([username, userData]) => {
+            const user = userData as UserData;
+            const position = user.three_d_embedding;
             return {
               id: username,
               name: username,
               position,
-              connections: connections[username],
               favoriteTopic: user.favorite_topic,
               keywords: user.keywords,
               stats: user.stats,
+              color: "#6366f1", // You can adjust or compute color as needed.
             };
-          }
-        );
+          });
 
-        setUsernames(usernames);
-        setPoints(transformedPoints);
         setMainUsername(main_username.username);
+        setPoints(transformedPoints);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
@@ -385,9 +380,7 @@ export default function NetworkGraph() {
   return (
     <div
       className="w-full h-screen bg-[#36393F]"
-      onPointerMove={(e) => {
-        setMousePosition({ x: e.clientX, y: e.clientY });
-      }}
+      onPointerMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
     >
       <div className="fixed top-4 left-4 flex gap-2 z-50">
         <Button
@@ -434,7 +427,7 @@ export default function NetworkGraph() {
           <BarChart2 className="w-5 h-5 mr-2" />
           View Metrics
         </motion.button>
-        <Sidebar point={selectedPoint} onClose={() => setSelectedPoint(null)} />
+        <Sidebar point={selectedPoint} allPoints={points} onClose={() => setSelectedPoint(null)} />
       </div>
 
       {hoveredPoint && (
@@ -460,9 +453,7 @@ export default function NetworkGraph() {
         <span className="sr-only">Help</span>
       </Button>
 
-      {isInfoModalOpen && (
-        <InfoModal onClose={() => setIsInfoModalOpen(false)} />
-      )}
+      {isInfoModalOpen && <InfoModal onClose={() => setIsInfoModalOpen(false)} />}
     </div>
   );
 }
