@@ -259,7 +259,6 @@ def get_local_graph():
             )[:5]
             data[user]["keywords"] = keyword
 
-    print("Local Data: ", data)
     return jsonify(data)
 
 
@@ -331,7 +330,6 @@ def get_global_graph():
             color_index += 1
         data[user]["color"] = color_map[lc]
 
-    print("Gobal Data: ", data)
     return jsonify(data)
 
 

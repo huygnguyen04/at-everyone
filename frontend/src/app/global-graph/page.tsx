@@ -114,13 +114,8 @@ function Points({
         })
       )}
 
-      {points.map((point) => (console.log("point", point.color), null))}
-
       {points.map((point) => (
-        <group
-          key={point.id}
-          position={point.position as [number, number, number]}
-        >
+        <group key={point.id} position={point.position as [number, number, number]}>
           <mesh
             onClick={(e) => {
               e.stopPropagation();
@@ -134,8 +129,6 @@ function Points({
           >
             <sphereGeometry args={[0.2, 32, 32]} />
             <meshStandardMaterial
-              // color={"#6366f1"}
-              //   color={point.id === mainUsername ? "#FAA619" : "#6366f1"}
               color={point.id === mainUsername ? "#FAA619" : point.color}
               emissive={hoveredPoint?.id === point.id ? "#ffffff" : "#000000"}
               emissiveIntensity={hoveredPoint?.id === point.id ? 0.2 : 0}
@@ -155,6 +148,67 @@ function Sidebar({
   onClose: () => void;
 }) {
   if (!point) return null;
+
+  // Define the metrics in the specified order.
+  const metrics = [
+    {
+      name: "Total Messages",
+      value:
+        point.stats["Message Counts and Types"]?.total_messages ?? "N/A",
+    },
+    {
+      name: "Average Messages per Day",
+      value:
+        point.stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
+    },
+    {
+      name: "Longest Period Without Messages",
+      value:
+        point.stats["Activity Metrics"]?.longest_period_without_messages ?? "N/A",
+    },
+    {
+      name: "Longest Active Conversation",
+      value:
+        point.stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
+    },
+    {
+      name: "Most Active Year",
+      value: point.stats["Time-Related Details"]?.most_active_year
+        ? point.stats["Time-Related Details"].most_active_year[0]
+        : "N/A",
+    },
+    {
+      name: "Unique Words Used",
+      value:
+        point.stats["Word Usage Statistics"]?.unique_words_used ?? "N/A",
+    },
+    {
+      name: "Average Words per Message",
+      value:
+        point.stats["Word Usage Statistics"]?.average_words_per_message ?? "N/A",
+    },
+    {
+      name: "Total Emoji Used",
+      value:
+        point.stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ?? "N/A",
+    },
+    {
+      name: "Most Used Emoji",
+      value: point.stats["Most Used Emoji"]?.emoji ?? "N/A",
+    },
+    {
+      name: "Dryness Score",
+      value: point.stats["Dryness Score"] ?? "N/A",
+    },
+    {
+      name: "Humor Score",
+      value: point.stats["Humor Score"] ?? "N/A",
+    },
+    {
+      name: "Romance Score",
+      value: point.stats["Romance Score"] ?? "N/A",
+    },
+  ];
 
   return (
     <div className="fixed right-0 top-0 h-screen w-80 bg-[#2b2d31] border-l border-[#1e1f22] p-6 text-white overflow-y-auto">
@@ -180,7 +234,6 @@ function Sidebar({
         <div>
           <h3 className="text-sm font-medium text-[#b5bac1]">Top Keywords</h3>
           <div className="mt-2 flex flex-wrap gap-2">
-            {/* {point.keywords.slice(0, 5).map((kw) => ( */}
             {point.keywords.map((kw) => (
               <span
                 key={kw.keyword}
@@ -195,18 +248,11 @@ function Sidebar({
         <div>
           <h3 className="text-sm font-medium text-[#b5bac1]">Stats</h3>
           <div className="mt-2 space-y-2">
-            <div className="p-2 rounded bg-[#313338]">
-              <span className="text-[#b5bac1]">Total Messages:</span>{" "}
-              {point.stats["Message Counts and Types"]["total_messages"]}
-            </div>
-            <div className="p-2 rounded bg-[#313338]">
-              <span className="text-[#b5bac1]">Dryness Score:</span>{" "}
-              {point.stats["Dryness Score"]}
-            </div>
-            <div className="p-2 rounded bg-[#313338]">
-              <span className="text-[#b5bac1]">Humor Score:</span>{" "}
-              {point.stats["Humor Score"]}
-            </div>
+            {metrics.map((metric) => (
+              <div key={metric.name} className="p-2 rounded bg-[#313338]">
+                <span className="text-[#b5bac1]">{metric.name}:</span> {metric.value}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -246,8 +292,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
         </div>
         <p>
           This is a graph showing the connection between chat users in a
-          particular chat group. Each node represents a user, and the
-          connections between nodes represent the interactions between users.
+          particular chat group. Each node represents a user, and the connections between nodes represent the interactions between users.
         </p>
       </div>
     </div>
@@ -306,7 +351,6 @@ export default function NetworkGraph() {
           .map(([username, userData]) => {
             const user = userData as UserData;
             const position = user.three_d_embedding; // No need to parse
-            // No need to parse keywords and stats anymore
             return {
               id: username,
               name: username,
