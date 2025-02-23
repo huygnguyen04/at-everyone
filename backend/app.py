@@ -14,6 +14,7 @@ import ast
 from generateCommentary import create_wrapped_commentary
 from datetime import datetime  # Import datetime to generate conversation ID
 
+
 def safe_eval_dict(data):
     if isinstance(data, dict):
         return {key: safe_eval_dict(value) for key, value in data.items()}
@@ -27,16 +28,19 @@ def safe_eval_dict(data):
     else:
         return data
 
+
 app = Flask(__name__)
 CORS(app)
 
 # Connect to the database
 db = SqliteDatabase("conversationhistory.db")
 
+
 # Base model for Peewee models
 class BaseModel(Model):
     class Meta:
         database = db
+
 
 # Local conversation history: cleared on every file upload
 class ConversationHistory(BaseModel):
@@ -50,6 +54,7 @@ class ConversationHistory(BaseModel):
     class Meta:
         table_name = "conversationhistory"
 
+
 # Global conversation history: accumulates or updates records over time
 class GlobalConversationHistory(BaseModel):
     username = TextField(primary_key=True)
@@ -58,10 +63,13 @@ class GlobalConversationHistory(BaseModel):
     stats = TextField()
     embedding = TextField()
     three_d_embedding = TextField(null=True, default="")
-    last_conversation = TextField(null=True, default="")  # NEW COLUMN to track conversation source
+    last_conversation = TextField(
+        null=True, default=""
+    )  # NEW COLUMN to track conversation source
 
     class Meta:
         table_name = "globalconversationhistory"
+
 
 # Ensure tables exist
 db.connect()
@@ -70,12 +78,14 @@ db.close()
 
 username = ""
 
+
 @app.route("/processUsername", methods=["POST"])
 def process_username():
     global username
     data = request.get_json()
     username = data.get("username")
     return jsonify({"message": "Username processed", "username": username}), 200
+
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
@@ -99,7 +109,7 @@ def upload_file():
     # Generate a unique conversation ID for this file upload
     conversation_id = datetime.now().isoformat()
 
-    usernames = get_unique_usernames(data)
+    usernames = get_unique_usernames(data)[0:10]
 
     for username in usernames:
         # Compute values for each user
@@ -132,7 +142,9 @@ def upload_file():
             global_entry.keywords = keywords_str
             global_entry.stats = stats_str
             global_entry.embedding = embedding_str
-            global_entry.last_conversation = conversation_id  # Update the conversation ID
+            global_entry.last_conversation = (
+                conversation_id  # Update the conversation ID
+            )
             global_entry.save()
         except GlobalConversationHistory.DoesNotExist:
             GlobalConversationHistory.create(
@@ -141,7 +153,7 @@ def upload_file():
                 keywords=keywords_str,
                 stats=stats_str,
                 embedding=embedding_str,
-                last_conversation=conversation_id  # Set conversation ID for new records
+                last_conversation=conversation_id,  # Set conversation ID for new records
             )
 
     # Retrieve all records from ConversationHistory to compute 3D embeddings.
@@ -185,6 +197,7 @@ def upload_file():
     db.close()
     return jsonify({"message": "File received and processed."}), 200
 
+
 @app.route("/getconversationhistory", methods=["GET"])
 def get_conversation_history():
     global username
@@ -195,7 +208,7 @@ def get_conversation_history():
     try:
         record = GlobalConversationHistory.get(
             GlobalConversationHistory.username == username
-        )   
+        )
     except GlobalConversationHistory.DoesNotExist:
         db.close()
         return jsonify({"error": "No conversation history found for username"}), 404
@@ -214,15 +227,22 @@ def get_conversation_history():
     db.close()
     return jsonify(response), 200
 
+
+@app.route("/api/getmainuser", methods=["GET"])
+def get_main_user():
+    print("Main user:", username)
+    return jsonify({"username": username}), 200
+
+
 @app.route("/api/local_graph", methods=["GET"])
 def get_local_graph():
     data = {}
-    for record in orm.ConversationHistory.select(
-        orm.ConversationHistory.username,
-        orm.ConversationHistory.favorite_topic,
-        orm.ConversationHistory.keywords,
-        orm.ConversationHistory.stats,
-        orm.ConversationHistory.three_d_embedding,
+    for record in ConversationHistory.select(
+        ConversationHistory.username,
+        ConversationHistory.favorite_topic,
+        ConversationHistory.keywords,
+        ConversationHistory.stats,
+        ConversationHistory.three_d_embedding,
     ):
         data[record.username] = {
             "favorite_topic": record.favorite_topic,
@@ -238,8 +258,82 @@ def get_local_graph():
                 data[user]["keywords"], key=lambda x: x["score"], reverse=True
             )[:5]
             data[user]["keywords"] = keyword
-            
+
+    print("Local Data: ", data)
     return jsonify(data)
+
+
+@app.route("/api/global_graph", methods=["GET"])
+def get_global_graph():
+    # colors = [
+    #     "#f43f5e",
+    #     "#ec4899",
+    #     "#d946ef",
+    #     "#a855f7",
+    #     "#8b5cf6",
+    #     "#6366f1",
+    #     "#3b82f6",
+    #     "#0ea5e9",
+    #     "#06b6d4",
+    #     "#14b8a6",
+    #     "#10b981",
+    #     "#22c55e",
+    #     "#84cc16",
+    #     "#ef4444",
+    # ]
+    colors = [
+        "#10b981",
+        "#a855f7",
+        "#ec4899",
+        "#0ea5e9",
+        "#6366f1",
+        "#f43f5e",
+        "#ef4444",
+        "#84cc16",
+        "#14b8a6",
+        "#3b82f6",
+        "#8b5cf6",
+        "#d946ef",
+        "#22c55e",
+        "#06b6d4",
+    ]
+    data = {}
+    color_map = {}
+    color_index = 0
+
+    for record in GlobalConversationHistory.select(
+        GlobalConversationHistory.username,
+        GlobalConversationHistory.favorite_topic,
+        GlobalConversationHistory.keywords,
+        GlobalConversationHistory.stats,
+        GlobalConversationHistory.three_d_embedding,
+        GlobalConversationHistory.last_conversation,
+    ):
+        data[record.username] = {
+            "favorite_topic": record.favorite_topic,
+            "keywords": record.keywords,
+            "stats": record.stats,
+            "three_d_embedding": record.three_d_embedding,
+            "color": record.last_conversation,
+        }
+
+    data = safe_eval_dict(data)
+
+    for user in data:
+        keyword = sorted(
+            data[user]["keywords"], key=lambda x: x["score"], reverse=True
+        )[:5]
+        data[user]["keywords"] = keyword
+
+        lc = data[user]["color"]
+        if lc not in color_map:
+            color_map[lc] = colors[color_index % len(colors)]
+            color_index += 1
+        data[user]["color"] = color_map[lc]
+
+    print("Gobal Data: ", data)
+    return jsonify(data)
+
 
 @app.route("/generateCommentary", methods=["POST"])
 def generate_commentary():
@@ -248,21 +342,23 @@ def generate_commentary():
     metric_name = data.get("name")
     if metric_value is None or metric_name is None:
         return jsonify({"error": "Invalid input"}), 400
-    
+
     # Generate commentary using the metric value (converted to string)
-    commentary = create_wrapped_commentary(metric_name + str(metric_value) + data.get("description"))
-    
+    commentary = create_wrapped_commentary(
+        metric_name + str(metric_value) + data.get("description")
+    )
+
     # Mapping from metric names to a brief description.
     description_mapping = {
-         "Total Emojis Used": "The total number of emojis used across all messages.",
-         "Messages with at Least One Emoji": "Count of messages that include at least one emoji.",
-         "Total Emoji Used in Reactions": "Total count of emojis used in reaction responses.",
-         "Unique Emoji Used in Reactions": "Number of distinct emojis used in reactions.",
-         "Messages with at Least One Emoji Reacted": "Count of messages that received an emoji reaction.",
-         "Most Used Emoji": "The emoji that appears most frequently in conversations.",
-         "Dryness Score": "A score representing how dry or unengaging the conversation is.",
-         "Humor Score": "A score indicating the level of humor in the conversation.",
-         "Romance Score": "A score indicating how romantic the conversation is."
+        "Total Emojis Used": "The total number of emojis used across all messages.",
+        "Messages with at Least One Emoji": "Count of messages that include at least one emoji.",
+        "Total Emoji Used in Reactions": "Total count of emojis used in reaction responses.",
+        "Unique Emoji Used in Reactions": "Number of distinct emojis used in reactions.",
+        "Messages with at Least One Emoji Reacted": "Count of messages that received an emoji reaction.",
+        "Most Used Emoji": "The emoji that appears most frequently in conversations.",
+        "Dryness Score": "A score representing how dry or unengaging the conversation is.",
+        "Humor Score": "A score indicating the level of humor in the conversation.",
+        "Romance Score": "A score indicating how romantic the conversation is.",
     }
     description = description_mapping.get(metric_name, "No description available.")
     return jsonify({"commentary": commentary, "description": description})

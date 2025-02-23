@@ -1,6 +1,6 @@
-"use client";
+"use client";;
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";;
 import {
   ArrowLeft,
   ArrowRight,
@@ -9,9 +9,9 @@ import {
   MessageCircle,
   Hash,
   AtSign,
-} from "lucide-react";
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+} from "lucide-react";;
+import { motion, useAnimation, AnimatePresence } from "framer-motion";;
+import { useRouter } from "next/navigation";;
 
 // Shapes and helper for random positions
 const shapes = [
@@ -22,10 +22,13 @@ const shapes = [
   <MessageCircle key="message" size={40} color="#99AAB5" />,
   <Hash key="hash" size={40} color="#99AAB5" />,
   <AtSign key="at" size={40} color="#99AAB5" />,
-];
+];;
 
 const getRandomPosition = () => ({
   x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 1000),
+  y:
+    Math.random() * (typeof window !== "undefined" ? window.innerHeight : 1000),
+});
   y: Math.random() * (typeof window !== "undefined" ? window.innerHeight : 1000),
 });
 
@@ -38,7 +41,11 @@ const FloatingShape = ({
   children: React.ReactNode;
   initialX: number;
   initialY: number;
+  children: React.ReactNode;
+  initialX: number;
+  initialY: number;
 }) => {
+  const controls = useAnimation();
   const controls = useAnimation();
 
   useEffect(() => {
@@ -58,15 +65,32 @@ const FloatingShape = ({
     };
     animateShape();
   }, [controls, initialX, initialY]);
+      });
+    };
+    animateShape();
+  }, [controls, initialX, initialY]);
 
   return (
-    <motion.div className="absolute opacity-5" style={{ x: initialX, y: initialY }} animate={controls}>
+    <motion.div
+      className="absolute opacity-5"
+      style={{ x: initialX, y: initialY }}
+      animate={controls}
+    >
       {children}
     </motion.div>
   );
 };
+  );
+};
 
 export default function Metrics() {
+  const router = useRouter();
+  const [currentType, setCurrentType] = useState<"basic" | "interesting">(
+    "basic"
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [conversationData, setConversationData] = useState<any>(null);
   const router = useRouter();
   const [currentType, setCurrentType] = useState<"basic" | "interesting">("basic");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -74,6 +98,8 @@ export default function Metrics() {
   const [conversationData, setConversationData] = useState<any>(null);
   const [shapesData, setShapesData] = useState<
     { x: number; y: number; ShapeComponent: React.ReactNode }[]
+  >([]);
+  const backgroundControls = useAnimation();
   >([]);
   // State to hold the transformed interesting metrics.
   // Each object will have:
@@ -88,11 +114,21 @@ export default function Metrics() {
     fetch("http://127.0.0.1:5000/getconversationhistory")
       .then((response) => response.json())
       .then((data) => setConversationData(data))
+      .catch((error) =>
+        console.error("Error fetching conversation history:", error)
+      );
+  }, []);
       .catch((error) => console.error("Error fetching conversation history:", error));
   }, []);
 
   useEffect(() => {
     const generatedShapes = Array.from({ length: 20 }, (_, index) => {
+      const { x, y } = getRandomPosition();
+      const ShapeComponent = shapes[index % shapes.length];
+      return { x, y, ShapeComponent };
+    });
+    setShapesData(generatedShapes);
+  }, [currentType, currentIndex]);
       const { x, y } = getRandomPosition();
       const ShapeComponent = shapes[index % shapes.length];
       return { x, y, ShapeComponent };
@@ -171,8 +207,18 @@ export default function Metrics() {
     duration: 0.3,
     ease: "easeInOut",
   };
+  };
 
   const nextMetric = async () => {
+    setDirection(1);
+    await backgroundControls.start({
+      x: -window.innerWidth,
+      transition: commonTransition,
+    });
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % metrics.length);
+    backgroundControls.set({ x: window.innerWidth });
+    backgroundControls.start({ x: 0, transition: commonTransition });
+  };
     setDirection(1);
     await backgroundControls.start({ x: -window.innerWidth, transition: commonTransition });
     setCurrentIndex((prevIndex) => (prevIndex + 1) % metrics.length);
@@ -182,6 +228,17 @@ export default function Metrics() {
 
   const prevMetric = async () => {
     setDirection(-1);
+    await backgroundControls.start({
+      x: window.innerWidth,
+      transition: commonTransition,
+    });
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + metrics.length) % metrics.length
+    );
+    backgroundControls.set({ x: -window.innerWidth });
+    backgroundControls.start({ x: 0, transition: commonTransition });
+  };
+    setDirection(-1);
     await backgroundControls.start({ x: -window.innerWidth, transition: commonTransition });
     setCurrentIndex((prevIndex) => (prevIndex - 1 + metrics.length) % metrics.length);
     backgroundControls.set({ x: -window.innerWidth });
@@ -189,6 +246,17 @@ export default function Metrics() {
   };
 
   const toggleMetricType = async () => {
+    await backgroundControls.start({
+      y: -window.innerHeight,
+      transition: commonTransition,
+    });
+    setCurrentType((prevType) =>
+      prevType === "basic" ? "interesting" : "basic"
+    );
+    setCurrentIndex(0);
+    backgroundControls.set({ y: window.innerHeight });
+    backgroundControls.start({ y: 0, transition: commonTransition });
+  };
     await backgroundControls.start({ y: -window.innerHeight, transition: commonTransition });
     setCurrentType((prevType) => (prevType === "basic" ? "interesting" : "basic"));
     setCurrentIndex(0);
@@ -212,6 +280,7 @@ export default function Metrics() {
       opacity: 0,
     }),
   };
+  };
 
   const verticalVariants = {
     enter: (direction: number) => ({
@@ -229,6 +298,7 @@ export default function Metrics() {
       opacity: 0,
     }),
   };
+  };
 
   // Compute the metrics array.
   // For basic metrics, we use the hardcoded names/values.
@@ -237,69 +307,129 @@ export default function Metrics() {
     conversationData && conversationData.stats
       ? (() => {
           const stats = conversationData.stats;
+          const stats = conversationData.stats;
           const basicMetrics = [
-            { name: "Total Messages", value: stats["Message Counts and Types"]?.total_messages ?? "N/A" },
-            { name: "Edited Messages", value: stats["Message Counts and Types"]?.edited_messages ?? "N/A" },
+            {
+              name: "Total Messages",
+              value: stats["Message Counts and Types"]?.total_messages ?? "N/A",
+            },
+            {
+              name: "Edited Messages",
+              value:
+                stats["Message Counts and Types"]?.edited_messages ?? "N/A",
+            },
             {
               name: "Average Messages per Day",
-              value: stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
+              value:
+                stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
             },
             {
               name: "Longest Period Without Messages",
-              value: stats["Activity Metrics"]?.longest_period_without_messages ?? "N/A",
+              value:
+                stats["Activity Metrics"]?.longest_period_without_messages ??
+                "N/A",
             },
             {
               name: "Longest Active Conversation",
-              value: stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
+              value:
+                stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
             },
             {
               name: "Most Active Year",
-              value: stats["Time-Related Details"]?.most_active_year ? stats["Time-Related Details"].most_active_year[0] : "N/A",
+              value: stats["Time-Related Details"]?.most_active_year
+                ? stats["Time-Related Details"].most_active_year[0]
+                : "N/A",
             },
             {
               name: "Most Active Month",
-              value: stats["Time-Related Details"]?.most_active_month ? stats["Time-Related Details"].most_active_month[0] : "N/A",
+              value: stats["Time-Related Details"]?.most_active_month
+                ? stats["Time-Related Details"].most_active_month[0]
+                : "N/A",
             },
             {
               name: "Most Active Day",
-              value: stats["Time-Related Details"]?.most_active_day ? stats["Time-Related Details"].most_active_day[0] : "N/A",
+              value: stats["Time-Related Details"]?.most_active_day
+                ? stats["Time-Related Details"].most_active_day[0]
+                : "N/A",
             },
             {
               name: "Most Active Hour",
-              value: stats["Time-Related Details"]?.most_active_hour ? stats["Time-Related Details"].most_active_hour[0] : "N/A",
+              value: stats["Time-Related Details"]?.most_active_hour
+                ? stats["Time-Related Details"].most_active_hour[0]
+                : "N/A",
             },
             {
               name: "Total Meaningful Words",
-              value: stats["Word Usage Statistics"]?.total_meaningful_words ?? "N/A",
+              value:
+                stats["Word Usage Statistics"]?.total_meaningful_words ?? "N/A",
             },
-            { name: "Unique Words Used", value: stats["Word Usage Statistics"]?.unique_words_used ?? "N/A" },
+            {
+              name: "Unique Words Used",
+              value: stats["Word Usage Statistics"]?.unique_words_used ?? "N/A",
+            },
             {
               name: "Average Words per Message",
-              value: stats["Word Usage Statistics"]?.average_words_per_message ?? "N/A",
+              value:
+                stats["Word Usage Statistics"]?.average_words_per_message ??
+                "N/A",
             },
+          ];
+
+          const interestingMetrics = [
           ];
           const interestingMetricsFallback = [
             {
+              name: "Total Emoji Used",
+              value:
+                stats["Emoji Usage (in text and reactions)"]
+                  ?.total_emoji_used ?? "N/A",
               header: "Total Emoji Used",
               value: "N/A",
               description: "Total number of emojis used across all messages.",
             },
             {
+              name: "Messages with at Least One Emoji",
+              value:
+                stats["Emoji Usage (in text and reactions)"]
+                  ?.messages_with_at_least_one_emoji ?? "N/A",
               header: "Most Used Emoji",
               value: "N/A",
               description: "The emoji that appears most frequently in conversations.",
             },
             {
+              name: "Total Emoji Used in Reactions",
+              value:
+                stats["Emoji Usage (in text and reactions)"]
+                  ?.total_emoji_used_in_reactions ?? "N/A",
               header: "Dryness",
               value: "N/A",
               description: "A score representing how dry or unengaging the conversation is.",
             },
             {
+              name: "Unique Emoji Used in Reactions",
+              value:
+                stats["Emoji Usage (in text and reactions)"]
+                  ?.unique_emoji_used_in_reactions ?? "N/A",
+            },
+            {
+              name: "Messages with at Least One Emoji Reacted",
+              value:
+                stats["Emoji Usage (in text and reactions)"]
+                  ?.messages_with_at_least_one_emoji_reacted ?? "N/A",
               header: "Humor",
               value: "N/A",
               description: "A score indicating the level of humor in the conversation.",
             },
             {
+              name: "Most Used Emoji",
+              value: stats["Most Used Emoji"]?.emoji ?? "N/A",
+              imageUrl: stats["Most Used Emoji"]?.imageUrl,
+            },
+            { name: "Dryness Score", value: stats["Dryness Score"] ?? "N/A" },
+            { name: "Humor Score", value: stats["Humor Score"] ?? "N/A" },
+          ];
+
+          return currentType === "basic" ? basicMetrics : interestingMetrics;
               header: "Romance",
               value: "N/A",
               description: "A score representing how romantic the user is.",
@@ -309,11 +439,34 @@ export default function Metrics() {
         })()
       : [];
 
+      : [];
+
   // Updated getHeader: in interesting mode, the header is now the original metric name.
   const getHeader = () => {
     if (currentType === "basic") {
       const currentMetricName = metrics[currentIndex]?.name;
+      const currentMetricName = metrics[currentIndex]?.name;
       const quirkyDescriptions: { [key: string]: string } = {
+        "Total Messages": "You sent",
+        "Edited Messages": "Edited messages",
+        "Average Messages per Day": "On average, you send",
+        "Longest Period Without Messages": "Longest period without messages",
+        "Longest Active Conversation": "Your longest chat lasted",
+        "Most Active Year": "Most active year",
+        "Most Active Month": "Most active month",
+        "Most Active Day": "Your most chatty day is",
+        "Most Active Hour": "Most active hour",
+        "Total Meaningful Words": "You typed",
+        "Unique Words Used": "Unique words used",
+        "Average Words per Message": "Your average message length is",
+      };
+      return quirkyDescriptions[currentMetricName] || "Your Basic Metrics";
+    }
+    // For interesting metrics, use the favorite topic from conversationData
+    return conversationData?.favorite_topic
+      ? `Your ${conversationData.favorite_topic} Metrics`
+      : "Your Interesting Metrics";
+  };
         "Total Messages": "Wow, look at that! You sent ",
         "Edited Messages": "You've refined ",
         "Average Messages per Day": "Every day, you ignited conversations with ",
@@ -352,8 +505,18 @@ export default function Metrics() {
         animate={backgroundControls}
       >
         {shapesData.map(({ x, y, ShapeComponent }) => (
-          <FloatingShape key={`${currentType}-${x}-${y}`} initialX={x} initialY={y}>
-            <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <FloatingShape
+            key={`${currentType}-${x}-${y}`}
+            initialX={x}
+            initialY={y}
+          >
+            <svg
+              width="50"
+              height="50"
+              viewBox="0 0 50 50"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               {ShapeComponent}
             </svg>
           </FloatingShape>
@@ -387,6 +550,12 @@ export default function Metrics() {
             transition={commonTransition}
             className="bg-[#40444B] p-6 rounded-lg mb-6"
           >
+            <p className="text-4xl font-bold text-white">
+              {metrics[currentIndex]?.value || "Loading..."}
+            </p>
+            <h2 className="text-2xl font-semibold text-[#99AAB5] mb-2">
+              {metrics[currentIndex]?.name || ""}
+            </h2>
             {currentType === "interesting" ? (
               <p className="text-4xl font-bold text-white">
                 {metrics[currentIndex]?.value ?? "Loading..."}
@@ -405,13 +574,20 @@ export default function Metrics() {
         </AnimatePresence>
 
         <div className="flex justify-between items-center mb-6">
-          <button onClick={prevMetric} className="text-[#99AAB5] hover:text-white transition-colors">
+          <button
+            onClick={prevMetric}
+            className="text-[#99AAB5] hover:text-white transition-colors"
+          >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <span className="text-[#99AAB5]">
-            {conversationData && metrics.length > 0 ? currentIndex + 1 : 0} / {conversationData ? metrics.length : 0}
+            {conversationData && metrics.length > 0 ? currentIndex + 1 : 0} /{" "}
+            {conversationData ? metrics.length : 0}
           </span>
-          <button onClick={nextMetric} className="text-[#99AAB5] hover:text-white transition-colors">
+          <button
+            onClick={nextMetric}
+            className="text-[#99AAB5] hover:text-white transition-colors"
+          >
             <ArrowRight className="w-6 h-6" />
           </button>
         </div>
@@ -428,6 +604,8 @@ export default function Metrics() {
             transition={commonTransition}
           >
             <SwitchHorizontal className="w-5 h-5 mr-2" />
+            Switch to {currentType === "basic" ? "Interesting" : "Basic"}{" "}
+            Metrics
             Switch To {currentType === "basic" ? "Our Custom" : "Basic"} Metrics
           </motion.button>
         </AnimatePresence>
@@ -435,7 +613,7 @@ export default function Metrics() {
 
       {/* View Network Graph Button */}
       <motion.button
-        onClick={() => router.push("/graph")}
+        onClick={() => router.push("/local-graph")}
         className="bg-[#4F545C] hover:bg-[#5D646D] text-white font-bold py-2 px-4 rounded-full inline-flex items-center justify-center transition-colors duration-300 absolute bottom-4 right-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

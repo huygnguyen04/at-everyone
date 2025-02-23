@@ -10,52 +10,11 @@ import { useRouter } from "next/navigation";
 
 const LINE_WIDTH = 2;
 
-const valueColorMap: Record<string, string> = {
-  low: "#ef4444",
-  "medium-low": "#f97316",
-  medium: "#eab308",
-  "medium-high": "#22c55e",
-  high: "#06b6d4",
-  "very-high": "#6366f1",
-};
-
-function getValueCategory(value: number): string {
-  if (value < 20) return "low";
-  if (value < 40) return "medium-low";
-  if (value < 60) return "medium";
-  if (value < 80) return "medium-high";
-  if (value < 90) return "high";
-  return "very-high";
-}
-
-// Generate random connections between users
-// function generateConnections(users: string[]): Record<string, string[]> {
-//   const connections: Record<string, string[]> = {};
-
-//   users.forEach((user) => {
-//     const numConnections = Math.floor(Math.random() * 3) + 1; // 1-3 connections per user
-//     const otherUsers = users.filter((u) => u !== user);
-//     const userConnections = [];
-
-//     for (let i = 0; i < numConnections; i++) {
-//       if (otherUsers.length > 0) {
-//         const randomIndex = Math.floor(Math.random() * otherUsers.length);
-//         userConnections.push(otherUsers[randomIndex]);
-//         otherUsers.splice(randomIndex, 1);
-//       }
-//     }
-
-//     connections[user] = userConnections;
-//   });
-
-//   console.log("Connections: ", connections);
-//   return connections;
-// }
 function generateConnections(users: string[]): Record<string, string[]> {
   const connections: Record<string, string[]> = {};
 
   users.forEach((user) => {
-    const numConnections = Math.floor(Math.random() * 3) + 1; // 1-3 connections per user
+    const numConnections = Math.floor(Math.random() * 3) + 1;
     const otherUsers = users.filter((u) => u !== user);
     const userConnections: string[] = [];
 
@@ -70,7 +29,6 @@ function generateConnections(users: string[]): Record<string, string[]> {
     connections[user] = userConnections;
   });
 
-  // Ensure bidirectional connections
   Object.entries(connections).forEach(([user, userConnections]) => {
     userConnections.forEach((otherUser) => {
       if (!connections[otherUser]) {
@@ -99,6 +57,7 @@ interface UserData {
     [key: string]: any;
   };
   three_d_embedding: number[];
+  color: string;
 }
 
 interface Point {
@@ -109,6 +68,7 @@ interface Point {
   favoriteTopic: string;
   keywords: Array<{ keyword: string; score: number }>;
   stats: any;
+  color: string;
 }
 
 function Points({
@@ -117,12 +77,14 @@ function Points({
   hoveredPoint,
   setHoveredPoint,
   selectedPoint,
+  mainUsername,
 }: {
   points: Point[];
   onPointClick: (point: Point) => void;
   hoveredPoint: Point | null;
   setHoveredPoint: (point: Point | null) => void;
   selectedPoint: Point | null;
+  mainUsername: string | null;
 }) {
   return (
     <group>
@@ -152,6 +114,8 @@ function Points({
         })
       )}
 
+      {points.map((point) => (console.log("point", point.color), null))}
+
       {points.map((point) => (
         <group
           key={point.id}
@@ -170,11 +134,9 @@ function Points({
           >
             <sphereGeometry args={[0.2, 32, 32]} />
             <meshStandardMaterial
-              color={
-                hoveredPoint?.id === point.id
-                  ? "#ffffff"
-                  : valueColorMap[getValueCategory(point.value)]
-              }
+              // color={"#6366f1"}
+              //   color={point.id === mainUsername ? "#FAA619" : "#6366f1"}
+              color={point.id === mainUsername ? "#FAA619" : point.color}
               emissive={hoveredPoint?.id === point.id ? "#ffffff" : "#000000"}
               emissiveIntensity={hoveredPoint?.id === point.id ? 0.2 : 0}
             />
@@ -283,10 +245,9 @@ function InfoModal({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         <p>
-          This graph represents the network of users and their connections. Each
-          point represents a user, with colors indicating their activity level.
-          The lines between points show connections between users. Click on any
-          point to see detailed information about that user.
+          This is a graph showing the connection between chat users in a
+          particular chat group. Each node represents a user, and the
+          connections between nodes represent the interactions between users.
         </p>
       </div>
     </div>
@@ -300,11 +261,17 @@ export default function NetworkGraph() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [points, setPoints] = useState<Point[]>([]);
+  const [mainUsername, setMainUsername] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch("http://127.0.0.1:5000/api/local_graph");
+        const main_user_response = await fetch(
+          "http://127.0.0.1:5000/api/getmainuser"
+        );
+        const main_username = await main_user_response.json();
+
+        const response = await fetch("http://127.0.0.1:5000/api/global_graph");
         const data = await response.json();
 
         const parsedData = Object.keys(data).reduce(
@@ -327,8 +294,16 @@ export default function NetworkGraph() {
         const connections = generateConnections(usernames);
 
         // Transform data into points
-        const transformedPoints = Object.entries(parsedData).map(
-          ([username, userData]) => {
+        const transformedPoints = Object.entries(parsedData)
+          .filter(([username, userData]) => {
+            const user = userData as UserData;
+            const position = user.three_d_embedding;
+            return (
+              Array.isArray(position) &&
+              position.every((coord) => !isNaN(coord))
+            );
+          })
+          .map(([username, userData]) => {
             const user = userData as UserData;
             const position = user.three_d_embedding; // No need to parse
             // No need to parse keywords and stats anymore
@@ -340,10 +315,11 @@ export default function NetworkGraph() {
               favoriteTopic: user.favorite_topic,
               keywords: user.keywords,
               stats: user.stats,
+              color: user.color,
             };
-          }
-        );
+          });
 
+        setMainUsername(main_username.username);
         setPoints(transformedPoints);
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -372,10 +348,10 @@ export default function NetworkGraph() {
         <Button
           variant="ghost"
           className="h-10 px-4 text-[#b5bac1] hover:text-white hover:bg-[#313338] inline-flex items-center"
-          onClick={() => router.push("/global-graph")}
+          onClick={() => router.push("/local-graph")}
         >
           <ArrowLeftRight className="h-5 w-5 mr-2" />
-          Global Graph
+          Local Graph
         </Button>
       </div>
 
@@ -389,6 +365,7 @@ export default function NetworkGraph() {
           hoveredPoint={hoveredPoint}
           setHoveredPoint={setHoveredPoint}
           selectedPoint={selectedPoint}
+          mainUsername={mainUsername}
         />
         <OrbitControls makeDefault />
       </Canvas>
