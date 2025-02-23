@@ -83,19 +83,39 @@ export default function Home() {
 
 
  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-   const file = event.target.files?.[0]
-   if (file) {
-     if (file.type === "application/json") {
-       setUploadFeedback("File uploaded successfully! Redirecting...")
-       // Here you would typically send the file to your backend
-       // For now, we'll just simulate a delay and redirect
-       await new Promise((resolve) => setTimeout(resolve, 1500))
-       router.push("/metrics")
-     } else {
-       setUploadFeedback("Please upload a JSON file.")
-     }
-   }
- }
+  const file = event.target.files?.[0];
+  if (file) {
+    if (file.type === "application/json") {
+      // Create FormData and append the file
+      const formData = new FormData();
+      formData.append("file", file);
+      setUploadFeedback("File processing.....");
+      try {
+        // Replace the URL with your Flask server's URL if different
+        const response = await fetch("http://127.0.0.1:5000/upload", {
+          method: "POST",
+          body: formData,
+        });
+        
+        const result = await response.json();
+
+        if (response.ok) {
+          setUploadFeedback("File uploaded successfully! Redirecting...");
+          // Optionally process result.data or other response data
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          router.push("/metrics");
+        } else {
+          setUploadFeedback(result.error || "File upload failed.");
+        }
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        setUploadFeedback("An error occurred while uploading.");
+      }
+    } else {
+      setUploadFeedback("Please upload a JSON file.");
+    }
+  }
+};
 
 
  const toggleInstructions = () => {
