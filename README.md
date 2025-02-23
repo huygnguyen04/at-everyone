@@ -46,3 +46,6 @@
 
 3. **Start the Analytics**  
    - Enter a `.json` file in the interface to start the analytics process.
+
+## License
+This project is licensed under the MIT License - see the LICENSE.md file for details.
