@@ -1,29 +1,109 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
+import json
+from flask_cors import CORS
+from jsonParsing import parse_messages, get_unique_usernames
+from generateEmbedding import getEmbedding
+from topicModeling import find_favorite_topic
+from pca import pca_to_3
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+
+import json
+from peewee import Model, TextField, SqliteDatabase
 
 app = Flask(__name__)
+CORS(app)
 
-# Home route
-@app.route('/')
-def index():
-    return "Hello, World!"
+# Handle file upload
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    file = request.files['file']
 
-# API endpoint example
-@app.route('/api/data', methods=['GET'])
-def get_data():
-    # Replace this with your actual data retrieval logic
-    data = {"message": "This is a sample API endpoint."}
-    return jsonify(data)
+    try:
+        data = json.load(file)
+        print("Received JSON:", data)
+    except Exception as e:
+        print("Error processing file:", e)
 
-# Form handling route
-@app.route('/form', methods=['GET', 'POST'])
-def handle_form():
-    if request.method == 'POST':
-        # Process the form data here
-        user_input = request.form.get('user_input', '')
-        # Add your processing logic here
-        return f"Received input: {user_input}"
-    # Render a template for GET requests; make sure you have a 'form.html' in your templates folder
-    return render_template('form.html')
+    db = SqliteDatabase('conversationhistory.db')
+    class ConversationHistory(Model):
+        username = TextField(primary_key=True)
+        favorite_topic = TextField()  # e.g., the topic label
+        keywords = TextField()        # stored as a JSON string
+        stats = TextField()           # stored as a JSON string of all stats
+        embedding = TextField()       # stored as a JSON string of the embedding
+        three_d_embedding = TextField(null=True, default="")  # new column initialized to nothing
 
+        class Meta:
+            database = db
+            table_name = 'conversationhistory'
+
+    # Connect to the database, clear existing data, and create the table.
+    db.connect()
+    db.create_tables([ConversationHistory])
+
+    usernames = get_unique_usernames(data)
+
+    # Iterate over the usernames and store the conversation data.
+    for username in usernames:
+        # Retrieve topic, stats, and embedding for each user.
+        topic = find_favorite_topic(username, data)
+        stats = parse_messages(data, username)
+        embedding = getEmbedding(topic, stats)
+
+        favorite_topic_label = topic.get("label")
+        keywords = topic.get("keywords")
+
+        keywords_str = json.dumps(keywords)
+        stats_str = json.dumps(stats)
+        embedding_str = json.dumps(embedding.tolist())
+
+        # Try to get the record; if it exists, update it; otherwise, create a new one.
+        entry, created = ConversationHistory.get_or_create(
+            username=username,
+            defaults={
+                "favorite_topic": favorite_topic_label,
+                "keywords": keywords_str,
+                "stats": stats_str,
+                "embedding": embedding_str,
+            }
+        )
+        if not created:
+            # Record already exists, so update its fields.
+            entry.favorite_topic = favorite_topic_label
+            entry.keywords = keywords_str
+            entry.stats = stats_str
+            entry.embedding = embedding_str
+            entry.save()
+
+    records = ConversationHistory.select()
+
+    # Initialize a list to collect embeddings.
+    all_embeddings = []
+
+    # Loop through each record, load the JSON string into a list (or array), and append it.
+    for record in records:
+        # Assuming record.embedding is stored as a JSON string like "[1,3,3]"
+        embedding = json.loads(record.embedding)
+        all_embeddings.append(embedding)
+
+    # Convert the list of embeddings into a NumPy array (matrix).
+    embedding_matrix = np.array(all_embeddings)
+    embedding_matrix = np.squeeze(embedding_matrix, axis=1)
+    scaler = StandardScaler()
+    embedding_matrix = scaler.fit_transform(embedding_matrix)
+
+    resultantMatrix = pca_to_3(embedding_matrix)
+
+    for i, record in enumerate(records):
+        # Get the i-th row from the resultant matrix.
+        three_d = resultantMatrix[i]  # this is a NumPy array of shape (3,)
+        # Convert it to a list and then to a JSON string.
+        record.three_d_embedding = json.dumps(three_d.tolist())
+        record.save()
+
+    db.close()
+    return jsonify({"message": "File received and processed."}), 200
+    
 if __name__ == '__main__':
     app.run(debug=True)

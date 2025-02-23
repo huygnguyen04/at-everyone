@@ -79,10 +79,8 @@ def compute_cluster_keywords(tokens, topn=10):
     return normalized_keywords
 
 # --- Main function to process the chat history and find the favorite topic ---
-def find_favorite_topic(username, file_path):
+def find_favorite_topic(username, data):
     # --- Load the JSON file ---
-    with open(file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
 
     if isinstance(data, dict) and "messages" in data:
         messages = data["messages"]

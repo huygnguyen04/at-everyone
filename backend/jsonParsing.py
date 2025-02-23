@@ -136,10 +136,8 @@ def funny_humor_label(final_score):
         return "Not Funny (Better stick to memes)"
 
 # --- Main parsing function ---
-def parse_messages(file_path, target_username):
+def parse_messages(data, target_username):
     # Load the JSON data.
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
     
     # If the JSON is wrapped in a dictionary with a "messages" key, extract it.
     if isinstance(data, dict) and "messages" in data:
@@ -406,16 +404,13 @@ def parse_messages(file_path, target_username):
     }
     
     return result
-def get_unique_usernames(file_path):
+def get_unique_usernames(data):
     """
     Parses the JSON file and returns a list of unique usernames that have sent at least 5 messages.
     A user is considered to have sent a message if the 'content' field is non-empty.
     """
     import json
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    
     # Extract the list of messages.
     if isinstance(data, dict) and "messages" in data:
         messages = data["messages"]
