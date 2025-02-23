@@ -29,7 +29,8 @@ const shapes = [
 const getRandomPosition = () => ({
   x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 1000),
   y:
-    Math.random() * (typeof window !== "undefined" ? window.innerHeight : 1000),
+    Math.random() *
+    (typeof window !== "undefined" ? window.innerHeight : 1000),
 });
 
 // FloatingShape component remains unchanged
@@ -274,66 +275,77 @@ export default function Metrics() {
             {
               name: "Total Messages",
               value: stats["Message Counts and Types"]?.total_messages ?? "N/A",
+              description: "",
             },
             {
               name: "Edited Messages",
-              value:
-                stats["Message Counts and Types"]?.edited_messages ?? "N/A",
+              value: stats["Message Counts and Types"]?.edited_messages ?? "N/A",
+              description: "",
             },
             {
               name: "Average Messages per Day",
               value:
                 stats["Activity Metrics"]?.average_messages_per_day ?? "N/A",
+              description: "",
             },
             {
               name: "Longest Period Without Messages",
               value:
                 stats["Activity Metrics"]?.longest_period_without_messages ??
                 "N/A",
+              description: "",
             },
             {
               name: "Longest Active Conversation",
               value:
                 stats["Activity Metrics"]?.longest_active_conversation ?? "N/A",
+              description: "",
             },
             {
               name: "Most Active Year",
               value: stats["Time-Related Details"]?.most_active_year
                 ? stats["Time-Related Details"].most_active_year[0]
                 : "N/A",
+              description: "",
             },
             {
               name: "Most Active Month",
               value: stats["Time-Related Details"]?.most_active_month
                 ? stats["Time-Related Details"].most_active_month[0]
                 : "N/A",
+              description: "",
             },
             {
               name: "Most Active Day",
               value: stats["Time-Related Details"]?.most_active_day
                 ? stats["Time-Related Details"].most_active_day[0]
                 : "N/A",
+              description: "",
             },
             {
               name: "Most Active Hour",
               value: stats["Time-Related Details"]?.most_active_hour
                 ? stats["Time-Related Details"].most_active_hour[0]
                 : "N/A",
+              description: "",
             },
             {
               name: "Total Meaningful Words",
               value:
                 stats["Word Usage Statistics"]?.total_meaningful_words ?? "N/A",
+              description: "",
             },
             {
               name: "Unique Words Used",
               value: stats["Word Usage Statistics"]?.unique_words_used ?? "N/A",
+              description: "",
             },
             {
               name: "Average Words per Message",
               value:
                 stats["Word Usage Statistics"]?.average_words_per_message ??
                 "N/A",
+              description: "",
             },
           ];
           const interestingMetricsFallback = [
@@ -451,18 +463,31 @@ export default function Metrics() {
         ))}
       </motion.div>
 
-      {/* Main Content */}
-      <div className="bg-[#2F3136] p-8 rounded-lg shadow-xl w-full max-w-md relative z-10">
+      {/* Main Content: Outer Container */}
+      <div
+        className={`
+          bg-[#2F3136] p-8 rounded-lg shadow-xl relative z-20
+          flex flex-col 
+          ${
+            currentType === "basic"
+              ? "w-full max-w-md" // kinda square size for basic
+              : "w-full max-w-3xl" // original for interesting
+          }
+        `}
+      >
         <motion.h1
-          className="text-3xl font-bold text-white mb-2 text-center"
+          className={`text-3xl font-bold text-white text-center ${
+            currentType === "basic" ? "mb-6" : "mb-2"
+          }`}
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           {getHeader()}
         </motion.h1>
+
         {currentType === "interesting" && (
-          <p className="text-sm text-[#99AAB5] mb-4 text-center">
+          <p className="text-sm text-[#99AAB5] mb-2 text-center">
             {metrics[currentIndex]?.description || ""}
           </p>
         )}
@@ -476,10 +501,11 @@ export default function Metrics() {
             animate="center"
             exit="exit"
             transition={commonTransition}
-            className="bg-[#40444B] p-6 rounded-lg mb-6"
+            // No forced width/height here anymore
+            className="bg-[#40444B] p-6 rounded-lg mb-6 mx-auto"
           >
             {currentType === "interesting" ? (
-              <p className="text-4xl font-bold text-white">
+              <p className="text-3xl font-bold text-white">
                 {metrics[currentIndex]?.value ?? "Loading..."}
               </p>
             ) : (
@@ -495,6 +521,7 @@ export default function Metrics() {
           </motion.div>
         </AnimatePresence>
 
+        {/* Navigation Controls */}
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={prevMetric}
@@ -503,8 +530,10 @@ export default function Metrics() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <span className="text-[#99AAB5]">
-            {conversationData && metrics.length > 0 ? currentIndex + 1 : 0} /{" "}
-            {conversationData ? metrics.length : 0}
+            {conversationData && metrics.length > 0
+              ? currentIndex + 1
+              : 0}{" "}
+            / {conversationData ? metrics.length : 0}
           </span>
           <button
             onClick={nextMetric}
@@ -526,7 +555,7 @@ export default function Metrics() {
             transition={commonTransition}
           >
             <SwitchHorizontal className="w-5 h-5 mr-2" />
-            Switch To {currentType === "basic" ? "Our Custom" : "Basic"} Metrics
+            Switch To {currentType === "basic" ? "Our Special" : "Normal"} Metrics
           </motion.button>
         </AnimatePresence>
       </div>
