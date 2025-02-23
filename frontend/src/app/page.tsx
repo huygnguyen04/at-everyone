@@ -227,31 +227,36 @@ export default function Home() {
         </button>
 
         <div className="border-t border-[#4F545C] pt-6">
-          <button
-            onClick={toggleInstructions}
-            className="flex items-center justify-between w-full text-left text-lg font-semibold text-[#99AAB5] hover:text-white transition-colors duration-300"
-          >
-            Instructions
-            {isInstructionsOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
-          <div
-            ref={instructionsRef}
-            className="mt-4 text-[#99AAB5] space-y-4 overflow-hidden transition-max-height duration-300"
-            style={{ maxHeight: isInstructionsOpen ? `${instructionsRef.current?.scrollHeight}px` : "0px" }}
-          >
-            <h3 className="font-semibold mb-2 text-white">
-              How to download your Discord chat data as a JSON file:
-            </h3>
-            <ol className="list-decimal list-inside space-y-2">
-              <li>Open Discord and go to User Settings (gear icon next to your username).</li>
-              <li>Scroll down and click on "Privacy & Safety".</li>
-              <li>Scroll to the bottom and click on "Request all of my Data".</li>
-              <li>Confirm your request and wait for Discord to email you (this may take up to 30 days).</li>
-              <li>Once you receive the email, download the ZIP file containing your data.</li>
-              <li>Extract the ZIP file and locate the JSON file for the chat you want to upload.</li>
-              <li>Use the "Upload JSON File" button above to upload your chat data.</li>
-            </ol>
-          </div>
+        <button
+  onClick={toggleInstructions}
+  className="flex items-center justify-between w-full text-left text-lg font-semibold text-[#99AAB5] hover:text-white transition-colors duration-300"
+>
+  Instructions
+  {isInstructionsOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+</button>
+<div
+  ref={instructionsRef}
+  className="mt-4 text-[#99AAB5] space-y-4 overflow-hidden transition-max-height duration-300"
+  style={{ maxHeight: isInstructionsOpen ? `${instructionsRef.current?.scrollHeight}px` : "0px" }}
+>
+  <h3 className="font-semibold mb-2 text-white">How to export your Discord chat data for this tool:</h3>
+  <ol className="list-decimal list-inside space-y-2">
+    <li>
+      Visit the <a href="https://github.com/Tyrrrz/DiscordChatExporter" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">DiscordChatExporter GitHub repo</a> to install the latest release.
+    </li>
+    <li>
+      Follow the instructions there to obtain your user or bot token and locate the channel IDs you want to export.
+    </li>
+    <li>
+      Open a terminal and run a command similar to:
+      <code className="block bg-[#202225] p-2 rounded mt-2">
+        DiscordChatExporter.Cli.exe export -t YOUR_TOKEN -c CHANNEL_ID -f json -o export.json
+      </code>
+    </li>
+    <li>When the exporter finishes, you'll have a JSON file (e.g., “export.json”).</li>
+    <li>Use the “Upload JSON File” button above to upload your exported chat data.</li>
+  </ol>
+</div>
         </div>
       </div>
     </main>
