@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Line } from "@react-three/drei";
-import { X, HelpCircle, BarChart2 } from "lucide-react";
+import { X, HelpCircle, BarChart2, Home, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -427,6 +427,24 @@ export default function NetworkGraph() {
         setMousePosition({ x: e.clientX, y: e.clientY });
       }}
     >
+      <div className="fixed top-4 left-4 flex gap-2 z-50">
+        <Button
+          variant="ghost"
+          className="h-10 px-4 text-[#b5bac1] hover:text-white hover:bg-[#313338] inline-flex items-center"
+          onClick={() => router.push("/")}
+        >
+          <Home className="h-5 w-5 mr-2" />
+          Home
+        </Button>
+        <Button
+          variant="ghost"
+          className="h-10 px-4 text-[#b5bac1] hover:text-white hover:bg-[#313338] inline-flex items-center"
+          onClick={() => router.push("/global-graph")}
+        >
+          <ArrowLeftRight className="h-5 w-5 mr-2" />
+          Global Graph
+        </Button>
+      </div>
       <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
         <color attach="background" args={["#36393F"]} />
         <ambientLight intensity={3} />
