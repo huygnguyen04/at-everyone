@@ -6,6 +6,7 @@ import { motion, useAnimation } from "framer-motion"
 import { useRouter } from "next/navigation"
 import LoadingScreen from "@/components/LoadingScreen"
 
+
 const shapes = [
   <path key="triangle" d="M25 0L50 25L25 50L0 25L25 0Z" fill="#7289DA" />,
   <circle key="circle" cx="30" cy="30" r="30" fill="#43B581" />,
@@ -182,7 +183,7 @@ export default function Home() {
       </div>
 
       <h1 className="text-5xl md:text-7xl font-bold text-center mb-12 text-white animate-fade-in-down">
-        Welcome to 3-Discord
+        @everyone
       </h1>
 
       <div className="bg-[#2F3136] p-8 rounded-lg shadow-xl w-full max-w-md relative z-10">
