@@ -15,6 +15,7 @@ def create_wrapped_commentary(metric):
         "Provide a lively, fun commentary that highlights this stat in a personal way. "
         "Be concise, but give it some personality."
         "Make it one sentence long."
+        "Make sure to use emojis."
     )
     
     completion = client.chat.completions.create(

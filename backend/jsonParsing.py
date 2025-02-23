@@ -27,6 +27,41 @@ def contains_link(text):
     url_regex = re.compile(r'https?://\S+')
     return bool(url_regex.search(text))
 
+# format timedelta helper function
+def parse_timedelta(time_str):
+    """
+    Parses a time string in one of the following formats:
+      - "HH:MM"
+      - "HH:MM:SS"
+      - "X days, HH:MM"
+      - "X days, HH:MM:SS"
+    Returns a timedelta object.
+    """
+    time_str = str(time_str)
+    days = 0
+    # Check if the time string contains a day component.
+    if "days" in time_str:
+        days_part, time_part = time_str.split(", ")
+        days = int(days_part.split()[0])
+    else:
+        time_part = time_str
+    # Split the time part by ":".
+    parts = time_part.split(":")
+    if len(parts) == 2:
+        # Format is HH:MM, assume 0 seconds.
+        hours, minutes = map(int, parts)
+        seconds = 0
+    elif len(parts) == 3:
+        # Format is HH:MM:SS.
+        hours, minutes, seconds = map(float, parts)
+        seconds = round(seconds)
+    else:
+        raise ValueError("Time string is not in a recognized format (expected HH:MM or HH:MM:SS)")
+    
+    return f"{int(days)} days, {int(hours)} hours, and {int(minutes)} minutes"
+    
+    # return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
 # --- Regex for detecting Unicode emoji in text ---
 emoji_pattern = re.compile("[" 
     u"\U0001F600-\U0001F64F"  # Emoticons
@@ -110,7 +145,60 @@ def compute_message_humor(message_text):
     humor = min(1, humor_ratio * 1.5)
     return humor
 
-# --- Funny label functions ---
+# --- Heuristic romance scoring ---
+def compute_message_romance(message_text):
+    """
+    Computes a romance score (0 to 1) using simple heuristics:
+      - Counts romance-related keywords (e.g., "love", "darling", "romantic", etc.).
+      - Counts heart-related emojis.
+      - Adds a boost if the sentiment is highly positive.
+    The score is computed relative to the total number of words and then scaled.
+    """
+    text_lower = message_text.lower()
+    words = re.findall(r'\b\w+\b', text_lower)
+    word_count = len(words)
+    
+    # Define romance keywords.
+    romance_keywords = [
+        "love", "loved", "loving", "adorable", "adore", "sweetheart",
+        "dear", "darling", "romance", "romantic", "passion", "infatuation", "amour"
+    ]
+    romance_count = sum(text_lower.count(kw) for kw in romance_keywords)
+    
+    # Count heart-related emojis.
+    heart_emojis = ["❤️", "😍", "😘", "💕", "💖", "💗", "💘", "💝"]
+    heart_count = sum(message_text.count(emoji) for emoji in heart_emojis)
+    
+    # Use sentiment analysis for a positive boost.
+    analyzer = SentimentIntensityAnalyzer()
+    compound = analyzer.polarity_scores(message_text)['compound']
+    sentiment_boost = compound if compound > 0.5 else 0
+    
+    # Combine counts: giving half weight to heart emojis.
+    raw_romance = romance_count + 0.5 * heart_count + sentiment_boost
+    
+    # Normalize by word count.
+    romance_ratio = (raw_romance / word_count) if word_count else 0
+    
+    # Scale to [0, 1]. The scaling factor can be adjusted based on your preferences.
+    scaling_factor = 3
+    romance_score = min(1, romance_ratio * scaling_factor)
+    
+    return romance_score
+
+def funny_romance_label(final_score):
+    if final_score >= 9:
+        return "Passionate (swoon-worthy)"
+    elif final_score >= 7:
+        return "Romantic (but not a poet)"
+    elif final_score >= 5:
+        return "Somewhat Affectionate"
+    elif final_score >= 3:
+        return "Reserved (like a guarded heart)"
+    else:
+        return "Cold as ice (no romance)"
+
+# --- Funny label functions for dryness and humor ---
 def funny_dryness_label(final_score):
     if final_score >= 9:
         return "Bone Dry (Sahara level)"
@@ -138,7 +226,6 @@ def funny_humor_label(final_score):
 # --- Main parsing function ---
 def parse_messages(data, target_username):
     # Load the JSON data.
-    
     # If the JSON is wrapped in a dictionary with a "messages" key, extract it.
     if isinstance(data, dict) and "messages" in data:
         data = data["messages"]
@@ -192,9 +279,10 @@ def parse_messages(data, target_username):
 
     conversation_durations = []
     
-    # Lists to collect per-message dryness and humor scores.
+    # Lists to collect per-message dryness, humor, and romance scores.
     dryness_scores = []
     humor_scores = []
+    romance_scores = []
     
     # Wrap the loop with tqdm to show a progress bar.
     for msg in tqdm(user_messages, desc=f"Processing messages for {target_username}"):
@@ -237,9 +325,10 @@ def parse_messages(data, target_username):
                     text_emoji_counter[em] += 1
                     emoji_count_total += 1
             
-            # Compute dryness and humor scores using our heuristic functions.
+            # Compute dryness, humor, and romance scores using our heuristic functions.
             dryness_scores.append(compute_message_dryness(content))
             humor_scores.append(compute_message_humor(content))
+            romance_scores.append(compute_message_romance(content))
         
         # Process inline (custom) emojis.
         inline_emojis = msg.get('inlineEmojis', [])
@@ -295,10 +384,13 @@ def parse_messages(data, target_username):
             gap = sorted_timestamps[i] - sorted_timestamps[i-1]
             if gap > longest_gap:
                 longest_gap = gap
+    longest_gap_string = parse_timedelta(longest_gap)
 
     if all_timestamps:
         total_days = (max(all_timestamps) - min(all_timestamps)).days + 1
         avg_messages_per_day = len(user_messages) / total_days if total_days > 0 else len(user_messages)
+        # round avg message per day
+        avg_messages_per_day = round(avg_messages_per_day, 3)
     else:
         avg_messages_per_day = 0
 
@@ -315,12 +407,16 @@ def parse_messages(data, target_username):
                 conversation_end = sorted_timestamps[i]
         conversation_durations.append(conversation_end - conversation_start)
         longest_conversation = max(conversation_durations)
+        
     else:
         longest_conversation = timedelta(0)
+
+    longest_conversation_string = parse_timedelta(longest_conversation)
     
     total_meaningful_words = sum(text_word_counts)
     unique_words = set(all_words)
     avg_words_per_message = total_meaningful_words / len(text_word_counts) if text_word_counts else 0
+    avg_words_per_message = round(avg_words_per_message, 3)
 
     most_active_year = year_counter.most_common(1)[0] if year_counter else ("N/A", 0)
     most_active_month = month_counter.most_common(1)[0] if month_counter else ("N/A", 0)
@@ -351,7 +447,7 @@ def parse_messages(data, target_username):
         overall_count = 0
         overall_url = None
     
-    # --- Compute overall dryness and humor scores ---
+    # --- Compute overall dryness, humor, and romance scores ---
     if dryness_scores:
         avg_dryness = sum(dryness_scores) / len(dryness_scores)
         final_dryness_score = round(avg_dryness * 9 + 1, 2)
@@ -361,18 +457,26 @@ def parse_messages(data, target_username):
     if humor_scores:
         avg_humor = sum(humor_scores) / len(humor_scores)
         final_humor_score = round(avg_humor * 9 + 1, 2) + 2
+        final_humor_score = round(final_humor_score, 3)
     else:
         final_humor_score = None
+
+    if romance_scores:
+        avg_romance = sum(romance_scores) / len(romance_scores)
+        final_romance_score = round(avg_romance * 9 + 1, 2)
+    else:
+        final_romance_score = None
     
     funny_dry_label = funny_dryness_label(final_dryness_score) if final_dryness_score is not None else "No Data"
     funny_humor_label_text = funny_humor_label(final_humor_score) if final_humor_score is not None else "No Data"
+    funny_romance_label_text = funny_romance_label(final_romance_score) if final_romance_score is not None else "No Data"
     
     result = {
         "Message Counts and Types": stats,
         "Activity Metrics": {
             "average_messages_per_day": avg_messages_per_day,
-            "longest_period_without_messages": str(longest_gap),
-            "longest_active_conversation": str(longest_conversation)
+            "longest_period_without_messages": longest_gap_string,
+            "longest_active_conversation": longest_conversation_string
         },
         "Time-Related Details": {
             "most_active_year": most_active_year,
@@ -399,19 +503,19 @@ def parse_messages(data, target_username):
         },
         "Dryness Score": final_dryness_score,
         "Funny Dryness Label": funny_dry_label, 
-        "Humor Score": final_humor_score,
-        "Funny Humor Label": funny_humor_label_text
+        "Humor Score": round(final_humor_score, 2) if final_humor_score is not None else None,
+        "Funny Humor Label": funny_humor_label_text,
+        "Romance Score": final_romance_score,
+        "Funny Romance Label": funny_romance_label_text
     }
     
     return result
+
 def get_unique_usernames(data):
     """
     Parses the JSON file and returns a list of unique usernames that have sent at least 5 messages.
     A user is considered to have sent a message if the 'content' field is non-empty.
     """
-    import json
-
-    # Extract the list of messages.
     if isinstance(data, dict) and "messages" in data:
         messages = data["messages"]
     elif isinstance(data, list):
@@ -419,17 +523,13 @@ def get_unique_usernames(data):
     else:
         raise ValueError("The JSON file does not contain a list of messages.")
     
-    # Count messages per username
     message_counts = {}
     for msg in messages:
         if isinstance(msg, dict):
             content = msg.get('content', '')
-            # Only count messages with non-empty content.
             if content and content.strip():
                 author = msg.get('author', {})
                 username = author.get('name')
                 if username:
                     message_counts[username] = message_counts.get(username, 0) + 1
-    
-    # Return usernames with at least 5 messages.
     return [username for username, count in message_counts.items() if count >= 5]

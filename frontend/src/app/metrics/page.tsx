@@ -106,29 +106,9 @@ export default function Metrics() {
       const stats = conversationData.stats;
       const interestingMetricsArray = [
         {
-          originalName: "Total Emoji Used",
+          originalName: "Total Emojis Used",
           value: stats["Emoji Usage (in text and reactions)"]?.total_emoji_used ?? "N/A",
           description: "Total number of emojis used across all messages.",
-        },
-        {
-          originalName: "Messages with at Least One Emoji",
-          value: stats["Emoji Usage (in text and reactions)"]?.messages_with_at_least_one_emoji ?? "N/A",
-          description: "Count of messages that include at least one emoji.",
-        },
-        {
-          originalName: "Total Emoji Used in Reactions",
-          value: stats["Emoji Usage (in text and reactions)"]?.total_emoji_used_in_reactions ?? "N/A",
-          description: "Total count of emojis used in reaction responses.",
-        },
-        {
-          originalName: "Unique Emoji Used in Reactions",
-          value: stats["Emoji Usage (in text and reactions)"]?.unique_emoji_used_in_reactions ?? "N/A",
-          description: "Number of distinct emojis used in reactions.",
-        },
-        {
-          originalName: "Messages with at Least One Emoji Reacted",
-          value: stats["Emoji Usage (in text and reactions)"]?.messages_with_at_least_one_emoji_reacted ?? "N/A",
-          description: "Count of messages that received an emoji reaction.",
         },
         {
           originalName: "Most Used Emoji",
@@ -139,12 +119,17 @@ export default function Metrics() {
         {
           originalName: "Dryness Score",
           value: stats["Dryness Score"] ?? "N/A",
-          description: "A score representing how dry or unengaging the conversation is.",
+          description: "A score representing how unengaging the user is from 1-10 with 1 being very unengaging and 10 being very engaging.",
         },
         {
           originalName: "Humor Score",
           value: stats["Humor Score"] ?? "N/A",
-          description: "A score indicating the level of humor in the conversation.",
+          description: "A score indicating how funny the user is from 1-10 with 1 being not funny and 10 being very funny.",
+        },
+        {
+          originalName: "Romance Score",
+          value: stats["Romance Score"] !== undefined ? stats["Romance Score"].toString() : "N/A",
+          description: "A score representing how romantic the user is from 1-10 with 1 being not romantic and 10 being very romantic.",
         },
       ];
 
@@ -300,40 +285,25 @@ export default function Metrics() {
               description: "Total number of emojis used across all messages.",
             },
             {
-              header: "Messages with at Least One Emoji",
-              value: "N/A",
-              description: "Count of messages that include at least one emoji.",
-            },
-            {
-              header: "Total Emoji Used in Reactions",
-              value: "N/A",
-              description: "Total count of emojis used in reaction responses.",
-            },
-            {
-              header: "Unique Emoji Used in Reactions",
-              value: "N/A",
-              description: "Number of distinct emojis used in reactions.",
-            },
-            {
-              header: "Messages with at Least One Emoji Reacted",
-              value: "N/A",
-              description: "Count of messages that received an emoji reaction.",
-            },
-            {
               header: "Most Used Emoji",
               value: "N/A",
               description: "The emoji that appears most frequently in conversations.",
             },
             {
-              header: "Dryness Score",
+              header: "Dryness",
               value: "N/A",
               description: "A score representing how dry or unengaging the conversation is.",
             },
             {
-              header: "Humor Score",
+              header: "Humor",
               value: "N/A",
               description: "A score indicating the level of humor in the conversation.",
             },
+            {
+              header: "Romance",
+              value: "N/A",
+              description: "A score representing how romantic the user is.",
+            }
           ];
           return currentType === "basic" ? basicMetrics : commentaryData.length > 0 ? commentaryData : interestingMetricsFallback;
         })()
@@ -344,25 +314,33 @@ export default function Metrics() {
     if (currentType === "basic") {
       const currentMetricName = metrics[currentIndex]?.name;
       const quirkyDescriptions: { [key: string]: string } = {
-        "Total Messages": "You sent",
-        "Edited Messages": "Edited messages",
-        "Average Messages per Day": "On average, you send",
-        "Longest Period Without Messages": "Longest period without messages",
-        "Longest Active Conversation": "Your longest chat lasted",
-        "Most Active Year": "Most active year",
-        "Most Active Month": "Most active month",
-        "Most Active Day": "Your most chatty day is",
-        "Most Active Hour": "Most active hour",
-        "Total Meaningful Words": "You typed",
-        "Unique Words Used": "Unique words used",
-        "Average Words per Message": "Your average message length is",
+        "Total Messages": "Wow, look at that! You sent ",
+        "Edited Messages": "You've refined ",
+        "Average Messages per Day": "Every day, you ignited conversations with ",
+        "Longest Period Without Messages": "Even legends take breaks – you went silent for ",
+        "Longest Active Conversation": "Epic chat marathon: you kept the convo going for ",
+        "Most Active Year": "The year you shined brightest: ",
+        "Most Active Month": "The month you stole the spotlight: ",
+        "Most Active Day": "The day you went all out: ",
+        "Most Active Hour": "When the magic happened: ",
+        "Total Meaningful Words": "Your words resonated – you typed a grand total of ",
+        "Unique Words Used": "Your vocabulary sparkle: a stunning array of ",
+        "Average Words per Message": "Crafting each message with flair – averaging "
       };
       return quirkyDescriptions[currentMetricName] || "Your Basic Metrics";
     } else {
-      // In interesting mode, return the header from the transformed metric (original metric name).
-      return metrics[currentIndex]?.header || "Your Interesting Metrics";
+      // For interesting metrics, append an appropriate emoji.
+      const header = metrics[currentIndex]?.header || "Your Interesting Metrics";
+      const emojiMapping: Record<string, string> = {
+        "Total Emojis Used": "😀",
+        "Most Used Emoji": "👑",
+        "Dryness Score": "🌵",
+        "Humor Score": "😂",
+        "Romance Score": "❤️",
+      };
+      return `${header} ${emojiMapping[header] || ""}`;
     }
-  };
+  };  
 
   return (
     <main className="min-h-screen bg-[#36393F] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -393,7 +371,7 @@ export default function Metrics() {
           {getHeader()}
         </motion.h1>
         {currentType === "interesting" && (
-          <p className="text-sm text-[#99AAB5] mb-4">
+          <p className="text-sm text-[#99AAB5] mb-4 text-center">
             {metrics[currentIndex]?.description || ""}
           </p>
         )}
@@ -411,12 +389,12 @@ export default function Metrics() {
           >
             {currentType === "interesting" ? (
               <p className="text-4xl font-bold text-white">
-                {metrics[currentIndex]?.value || "Loading..."}
+                {metrics[currentIndex]?.value ?? "Loading..."}
               </p>
             ) : (
               <>
                 <p className="text-4xl font-bold text-white">
-                  {metrics[currentIndex]?.value || "Loading..."}
+                  {metrics[currentIndex]?.value ?? "Loading..."}
                 </p>
                 <h2 className="text-2xl font-semibold text-[#99AAB5] mb-2">
                   {metrics[currentIndex]?.name || ""}
@@ -450,7 +428,7 @@ export default function Metrics() {
             transition={commonTransition}
           >
             <SwitchHorizontal className="w-5 h-5 mr-2" />
-            Switch to {currentType === "basic" ? "Interesting" : "Basic"} Metrics
+            Switch To {currentType === "basic" ? "Our Custom" : "Basic"} Metrics
           </motion.button>
         </AnimatePresence>
       </div>

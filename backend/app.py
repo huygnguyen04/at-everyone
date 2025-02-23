@@ -100,6 +100,7 @@ def upload_file():
     conversation_id = datetime.now().isoformat()
 
     usernames = get_unique_usernames(data)
+
     for username in usernames:
         # Compute values for each user
         topic = find_favorite_topic(username, data)
@@ -194,7 +195,7 @@ def get_conversation_history():
     try:
         record = GlobalConversationHistory.get(
             GlobalConversationHistory.username == username
-        )
+        )   
     except GlobalConversationHistory.DoesNotExist:
         db.close()
         return jsonify({"error": "No conversation history found for username"}), 404
@@ -248,14 +249,12 @@ def generate_commentary():
     if metric_value is None or metric_name is None:
         return jsonify({"error": "Invalid input"}), 400
     
-    print(data)
-
     # Generate commentary using the metric value (converted to string)
     commentary = create_wrapped_commentary(metric_name + str(metric_value) + data.get("description"))
     
     # Mapping from metric names to a brief description.
     description_mapping = {
-         "Total Emoji Used": "The total number of emojis used across all messages.",
+         "Total Emojis Used": "The total number of emojis used across all messages.",
          "Messages with at Least One Emoji": "Count of messages that include at least one emoji.",
          "Total Emoji Used in Reactions": "Total count of emojis used in reaction responses.",
          "Unique Emoji Used in Reactions": "Number of distinct emojis used in reactions.",
@@ -263,6 +262,7 @@ def generate_commentary():
          "Most Used Emoji": "The emoji that appears most frequently in conversations.",
          "Dryness Score": "A score representing how dry or unengaging the conversation is.",
          "Humor Score": "A score indicating the level of humor in the conversation.",
+         "Romance Score": "A score indicating how romantic the conversation is."
     }
     description = description_mapping.get(metric_name, "No description available.")
     return jsonify({"commentary": commentary, "description": description})

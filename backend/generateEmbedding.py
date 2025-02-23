@@ -7,23 +7,29 @@ from topicModeling import find_favorite_topic, embedder
 from jsonParsing import parse_messages
 from sklearn.preprocessing import StandardScaler
 
+import re
+
 def parse_timedelta(time_str):
     """
-    Converts a time string into a total number of seconds.
-    Handles two cases:
-      - "H:MM:SS.ssssss" (e.g., "1:01:37.073000")
-      - "X days, H:MM:SS.ssssss" (e.g., "253 days, 7:32:45.267000")
+    Parses a time string in the format:
+      "{days} days, {hours} hours, and {minutes} minutes"
+    and converts it into a total number of seconds.
+
+    Example:
+      Input: "253 days, 7 hours, and 32 minutes"
+      Output: total seconds corresponding to that duration.
     """
-    if "days" in time_str:
-        # Expected format: "253 days, 7:32:45.267000"
-        days_part, time_part = time_str.split(" days, ")
-        days = int(days_part.strip())
-        h, m, s = time_part.split(":")
-        total_seconds = days * 86400 + int(h) * 3600 + int(m) * 60 + float(s)
-    else:
-        # Expected format: "1:01:37.073000"
-        h, m, s = time_str.split(":")
-        total_seconds = int(h) * 3600 + int(m) * 60 + float(s)
+    pattern = r"(\d+)\s+days,\s+(\d+)\s+hours,\s+and\s+(\d+)\s+minutes"
+    match = re.match(pattern, time_str)
+    if not match:
+        raise ValueError("Time string is not in the expected format: "
+                         "'{days} days, {hours} hours, and {minutes} minutes'")
+
+    days = int(match.group(1))
+    hours = int(match.group(2))
+    minutes = int(match.group(3))
+
+    total_seconds = days * 86400 + hours * 3600 + minutes * 60
     return total_seconds
 
 def getEmbedding(favorite_label, stats):
