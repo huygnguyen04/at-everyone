@@ -11,7 +11,7 @@ from peewee import Model, TextField, SqliteDatabase
 from flask_cors import CORS
 import orm
 import ast
-
+from datetime import datetime  # Import datetime to generate conversation ID
 
 def safe_eval_dict(data):
     if isinstance(data, dict):
@@ -26,19 +26,16 @@ def safe_eval_dict(data):
     else:
         return data
 
-
 app = Flask(__name__)
 CORS(app)
 
 # Connect to the database
 db = SqliteDatabase("conversationhistory.db")
 
-
 # Base model for Peewee models
 class BaseModel(Model):
     class Meta:
         database = db
-
 
 # Local conversation history: cleared on every file upload
 class ConversationHistory(BaseModel):
@@ -52,7 +49,6 @@ class ConversationHistory(BaseModel):
     class Meta:
         table_name = "conversationhistory"
 
-
 # Global conversation history: accumulates or updates records over time
 class GlobalConversationHistory(BaseModel):
     username = TextField(primary_key=True)
@@ -61,10 +57,10 @@ class GlobalConversationHistory(BaseModel):
     stats = TextField()
     embedding = TextField()
     three_d_embedding = TextField(null=True, default="")
+    last_conversation = TextField(null=True, default="")  # NEW COLUMN to track conversation source
 
     class Meta:
         table_name = "globalconversationhistory"
-
 
 # Ensure tables exist
 db.connect()
@@ -73,15 +69,12 @@ db.close()
 
 username = ""
 
-
 @app.route("/processUsername", methods=["POST"])
 def process_username():
     global username
     data = request.get_json()
     username = data.get("username")
-
     return jsonify({"message": "Username processed", "username": username}), 200
-
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
@@ -102,7 +95,10 @@ def upload_file():
     # Clear the conversationhistory table on each new upload
     ConversationHistory.delete().execute()
 
-    usernames = get_unique_usernames(data)[0:3]
+    # Generate a unique conversation ID for this file upload
+    conversation_id = datetime.now().isoformat()
+
+    usernames = get_unique_usernames(data)
 
     for username in usernames:
         # Compute values for each user
@@ -117,7 +113,7 @@ def upload_file():
         stats_str = json.dumps(stats)
         embedding_str = json.dumps(embedding.tolist())
 
-        # Upsert into ConversationHistory (local table): since we cleared it, we can just create new entries.
+        # Upsert into ConversationHistory (local table): since we cleared it, we can create new entries.
         entry = ConversationHistory.create(
             username=username,
             favorite_topic=favorite_topic_label,
@@ -135,6 +131,7 @@ def upload_file():
             global_entry.keywords = keywords_str
             global_entry.stats = stats_str
             global_entry.embedding = embedding_str
+            global_entry.last_conversation = conversation_id  # Update the conversation ID
             global_entry.save()
         except GlobalConversationHistory.DoesNotExist:
             GlobalConversationHistory.create(
@@ -143,6 +140,7 @@ def upload_file():
                 keywords=keywords_str,
                 stats=stats_str,
                 embedding=embedding_str,
+                last_conversation=conversation_id  # Set conversation ID for new records
             )
 
     # Retrieve all records from ConversationHistory to compute 3D embeddings.
@@ -186,7 +184,6 @@ def upload_file():
     db.close()
     return jsonify({"message": "File received and processed."}), 200
 
-
 @app.route("/getconversationhistory", methods=["GET"])
 def get_conversation_history():
     global username
@@ -211,10 +208,10 @@ def get_conversation_history():
         "three_d_embedding": json.loads(record.three_d_embedding)
         if record.three_d_embedding
         else None,
+        "last_conversation": record.last_conversation,  # Include the conversation ID
     }
     db.close()
     return jsonify(response), 200
-
 
 @app.route("/api/local_graph", methods=["GET"])
 def get_local_graph():
@@ -240,9 +237,8 @@ def get_local_graph():
                 data[user]["keywords"], key=lambda x: x["score"], reverse=True
             )[:5]
             data[user]["keywords"] = keyword
-
+            
     return jsonify(data)
-
 
 if __name__ == "__main__":
     app.run(debug=True)
