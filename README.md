@@ -25,7 +25,7 @@
      ```  
    - Install the required dependencies (using npm):  
      ```bash
-     npm install
+     npm install --force
      ```  
    - Follow any additional installation instructions that may appear.
 
