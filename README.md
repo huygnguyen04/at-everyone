@@ -47,5 +47,8 @@
 3. **Start the Analytics**  
    - Enter a `.json` file in the interface to start the analytics process.
 
+## Documentation
+Further technical documentation can be found at https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit#slide=id.g33934e4fbbe_0_118
+
 ## License
 This project is licensed under the MIT License - see the LICENSE.md file for details.
