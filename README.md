@@ -4,9 +4,9 @@
 
 ## Additional Resources
 
-- **Devpost:** [View on Devpost](https://devpost.com/software/everyone)
-- **Demo Video:** [Watch Demo](https://youtu.be/UjLT6cSSEO0)
-- **Google Doc:** [Project Documentation](https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit)
+- ### **Devpost:** [View on Devpost](https://devpost.com/software/everyone)
+- ### **Demo Video:** [Watch Demo](https://youtu.be/UjLT6cSSEO0)
+- ### **Project Documentation:** [Technical Slides](https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit)
 
 ## Setup
 
@@ -259,8 +259,8 @@
     └── tsconfig.json
 ```
 
-## Documentation
-Further technical documentation can be found [here](https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit?usp=sharing).
-
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Author
+This project was developed by Matthew Nguyen, Pradeep Ravi, Daniel Son, and Huy Nguyen
