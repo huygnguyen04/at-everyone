@@ -2,6 +2,12 @@
 
 **@everyone** is a Discord analytics tool that parses your Discord messages and generates custom and engaging metrics personalized to you. These metrics are then used to build a high-dimensional embedding for each user, which is projected into a 3D semantic space. This interactive visualization lets you see your closest connections based on conversational similarity. Additionally, you’ll get personalized commentary that explains your unique metrics, giving you a deeper understanding of your Discord activity.
 
+## Additional Resources
+
+- **Devpost:** [View on Devpost](https://devpost.com/software/everyone)
+- **Demo Video:** [Watch Demo](https://youtu.be/UjLT6cSSEO0)
+- **Google Doc:** [Project Documentation](https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit)
+
 ## Setup
 
 1. **Backend Setup**  
@@ -257,4 +263,4 @@
 Further technical documentation can be found [here](https://docs.google.com/presentation/d/1Qg3NIIRwOzJD4uYUOTcN3bIabBKEsWeNhSO5_0ZB9-0/edit?usp=sharing).
 
 ## License
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
